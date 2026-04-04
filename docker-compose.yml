@@ -40,8 +40,6 @@ services:
     restart: always
     ports:
       - "80:80"
-    environment:
-      - API_URL=http://localhost:5000
     depends_on:
       - backend
     networks:
