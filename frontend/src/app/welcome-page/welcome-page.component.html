@@ -1,0 +1,19 @@
+<section class="welcome-page">
+  <app-header></app-header>
+
+  <section class="hero-section" aria-label="Welcome banner">
+    <div class="hero-content">
+      <h2>Welcome to Event Planner</h2>
+      <p>Discover your next experience and plan your week in one place.</p>
+    </div>
+  </section>
+
+  <section class="events-section" aria-label="List of events">
+    <h3>Upcoming events</h3>
+    <div class="events-list">
+      @for (event of events; track event.title) {
+        <app-event-card [event]="event"></app-event-card>
+      }
+    </div>
+  </section>
+</section>
