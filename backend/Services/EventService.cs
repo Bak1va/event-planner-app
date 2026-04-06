@@ -17,15 +17,20 @@ public interface IEventService
 public class EventService : IEventService
 {
     private readonly ConcurrentDictionary<int, EventItem> _eventsStore;
-    private readonly IUserService _userService;
     private readonly IValidationService _validationService;
+    private IUserService? _userService;
     private int _nextEventId = 1;
 
-    public EventService(IUserService userService, IValidationService validationService)
+    public EventService(IValidationService validationService)
     {
         _eventsStore = new ConcurrentDictionary<int, EventItem>();
-        _userService = userService;
         _validationService = validationService;
+        _userService = null;
+    }
+
+    public void SetUserService(IUserService userService)
+    {
+        _userService = userService;
     }
 
     public IEnumerable<EventDto> GetAllEvents()
@@ -59,7 +64,7 @@ public class EventService : IEventService
             throw new ArgumentException(validationError);
         }
 
-        if (_userService.GetUserById(request.UserId) == null)
+        if (_userService != null && _userService.GetUserById(request.UserId) == null)
         {
             throw new ArgumentException("Invalid userId. User does not exist.");
         }
@@ -94,7 +99,7 @@ public class EventService : IEventService
             throw new ArgumentException(validationError);
         }
 
-        if (_userService.GetUserById(request.UserId) == null)
+        if (_userService != null && _userService.GetUserById(request.UserId) == null)
         {
             throw new ArgumentException("Invalid userId. User does not exist.");
         }

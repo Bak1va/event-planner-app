@@ -16,15 +16,20 @@ public interface IUserService
 public class UserService : IUserService
 {
     private readonly ConcurrentDictionary<int, User> _usersStore;
-    private readonly IEventService _eventService;
     private readonly IValidationService _validationService;
+    private IEventService? _eventService;
     private int _nextUserId = 1;
 
-    public UserService(IEventService eventService, IValidationService validationService)
+    public UserService(IValidationService validationService)
     {
         _usersStore = new ConcurrentDictionary<int, User>();
-        _eventService = eventService;
         _validationService = validationService;
+        _eventService = null;
+    }
+
+    public void SetEventService(IEventService eventService)
+    {
+        _eventService = eventService;
     }
 
     public IEnumerable<UserDto> GetAllUsers()
@@ -107,7 +112,7 @@ public class UserService : IUserService
             throw new KeyNotFoundException($"User with id {id} was not found.");
         }
 
-        if (_eventService.GetEventsByUserId(id).Any())
+        if (_eventService != null && _eventService.GetEventsByUserId(id).Any())
         {
             throw new InvalidOperationException("Cannot delete user that has events. Delete events first.");
         }
