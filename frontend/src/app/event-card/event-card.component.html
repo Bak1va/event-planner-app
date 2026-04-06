@@ -1,0 +1,14 @@
+<article class="event-card">
+  <img
+    class="event-image"
+    [src]="event().imageUrl"
+    [alt]="event().title"
+    loading="lazy"
+  />
+
+  <div class="event-content">
+    <h2>{{ event().title }}</h2>
+    <p class="event-meta">{{ event().date }} • {{ event().location }}</p>
+    <p>{{ event().description }}</p>
+  </div>
+</article>
