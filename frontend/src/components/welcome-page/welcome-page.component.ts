@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 
 import { AppHeaderComponent } from '../app-header/app-header.component';
-import { EventCardComponent, EventCardData } from '../event-card/event-card.component';
+import { EventCardComponent } from '../event-card/event-card.component';
+import { EventCardData } from '../../models/event-card-data.model';
 
 @Component({
   selector: 'app-welcome-page',

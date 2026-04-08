@@ -1,12 +1,5 @@
 import { Component, input } from '@angular/core';
-
-export interface EventCardData {
-  title: string;
-  date: string;
-  location: string;
-  description: string;
-  imageUrl: string;
-}
+import { EventCardData } from '../../models/event-card-data.model';
 
 @Component({
   selector: 'app-event-card',
