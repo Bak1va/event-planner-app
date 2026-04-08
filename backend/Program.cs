@@ -1,38 +1,41 @@
+using Backend.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// Add services to the container
 builder.Services.AddOpenApi();
+builder.Services.AddSwaggerGen();
+builder.Services.AddControllers();
 
+// Register services with dependency injection
+// Note: We register them without circular dependencies and wire them up after
+builder.Services.AddSingleton<IValidationService, ValidationService>();
+builder.Services.AddSingleton<IUserService, UserService>();
+builder.Services.AddSingleton<IEventService, EventService>();
+
+// Build the app
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-app.MapOpenApi();
+// Wire up the services to resolve circular dependency
+var userService = app.Services.GetRequiredService<IUserService>() as UserService;
+var eventService = app.Services.GetRequiredService<IEventService>() as EventService;
+
+if (userService != null && eventService != null)
+{
+    userService.SetEventService(eventService);
+    eventService.SetUserService(userService);
+}
+
+// Configure the HTTP request pipeline
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.MapControllers();
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
