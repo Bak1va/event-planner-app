@@ -18,13 +18,13 @@ jobs:
           dotnet-version: '9.0.x'
           
       - name: Restore dependencies
-        run: dotnet restore ./backend/Backend.csproj
+        run: dotnet restore ./backend/Backend.csproj && dotnet restore ./Backend.Tests/Backend.Tests.csproj
         
       - name: Build Backend
         run: dotnet build ./backend/Backend.csproj --no-restore
         
       - name: Run Backend Tests
-        run: dotnet test ./backend/Backend.csproj --no-build --verbosity normal
+        run: dotnet test ./Backend.Tests/Backend.Tests.csproj --no-build --verbosity normal --logger "console;verbosity=detailed"
 
   build-frontend:
     runs-on: ubuntu-latest
