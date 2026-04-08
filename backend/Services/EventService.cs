@@ -58,7 +58,7 @@ public class EventService : IEventService
 
     public EventDto CreateEvent(EventCreateRequest request)
     {
-        var validationError = _validationService.ValidateEventRequest(request.Name, request.Status, request.Description);
+        var validationError = _validationService.ValidateEventRequest(request.Name, request.Status, request.Description, request.ImageUrl);
         if (validationError is not null)
         {
             throw new ArgumentException(validationError);
@@ -77,6 +77,7 @@ public class EventService : IEventService
             request.Name.Trim(),
             request.Status.Trim(),
             request.Description?.Trim() ?? string.Empty,
+            request.ImageUrl?.Trim() ?? string.Empty,
             now,
             now,
             request.UserId
@@ -93,7 +94,7 @@ public class EventService : IEventService
             throw new KeyNotFoundException($"Event with id {id} was not found.");
         }
 
-        var validationError = _validationService.ValidateEventRequest(request.Name, request.Status, request.Description);
+        var validationError = _validationService.ValidateEventRequest(request.Name, request.Status, request.Description, request.ImageUrl);
         if (validationError is not null)
         {
             throw new ArgumentException(validationError);
@@ -109,6 +110,7 @@ public class EventService : IEventService
             Name = request.Name.Trim(),
             Status = request.Status.Trim(),
             Description = request.Description?.Trim() ?? string.Empty,
+            ImageUrl = request.ImageUrl?.Trim() ?? string.Empty,
             UserId = request.UserId,
             DateModified = DateTime.UtcNow
         };
@@ -135,6 +137,7 @@ public class EventService : IEventService
             Name = eventItem.Name,
             Status = eventItem.Status,
             Description = eventItem.Description,
+            ImageUrl = eventItem.ImageUrl,
             DateAdded = eventItem.DateAdded,
             DateModified = eventItem.DateModified,
             UserId = eventItem.UserId

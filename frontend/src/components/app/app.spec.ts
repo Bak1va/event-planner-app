@@ -1,14 +1,20 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { of } from 'rxjs';
 
 import { App } from './app';
 import { routes } from './app.routes';
+import { EventService } from '../../services/event.service';
 
 describe('App', () => {
   beforeEach(async () => {
+    const eventServiceMock = {
+      getAllEvents: () => of([])
+    };
+
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter(routes)]
+      providers: [provideRouter(routes), { provide: EventService, useValue: eventServiceMock }]
     }).compileComponents();
   });
 

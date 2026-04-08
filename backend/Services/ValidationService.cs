@@ -3,7 +3,7 @@
 public interface IValidationService
 {
     string? ValidateUserRequest(string? name, string? email);
-    string? ValidateEventRequest(string? name, string? status, string? description);
+    string? ValidateEventRequest(string? name, string? status, string? description, string? imageUrl);
 }
 
 public class ValidationService : IValidationService
@@ -33,7 +33,7 @@ public class ValidationService : IValidationService
         return null;
     }
 
-    public string? ValidateEventRequest(string? name, string? status, string? description)
+    public string? ValidateEventRequest(string? name, string? status, string? description, string? imageUrl)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -58,6 +58,11 @@ public class ValidationService : IValidationService
         if (description is not null && description.Trim().Length > 1000)
         {
             return "Description cannot exceed 1000 characters.";
+        }
+
+        if (imageUrl is not null && imageUrl.Trim().Length > 2000)
+        {
+            return "ImageUrl cannot exceed 2000 characters.";
         }
 
         return null;
