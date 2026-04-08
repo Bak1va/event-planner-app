@@ -5,6 +5,7 @@ public record EventItem(
     string Name,
     string Status,
     string Description,
+    string ImageUrl,
     DateTime DateAdded,
     DateTime DateModified,
     int UserId
