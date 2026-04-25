@@ -2,13 +2,13 @@
 
 public interface IValidationService
 {
-    string? ValidateUserRequest(string? name, string? email);
+    string? ValidateUserRequest(string? name, string? email, string? password = null);
     string? ValidateEventRequest(string? name, string? status, string? description);
 }
 
 public class ValidationService : IValidationService
 {
-    public string? ValidateUserRequest(string? name, string? email)
+    public string? ValidateUserRequest(string? name, string? email, string? password = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -28,6 +28,19 @@ public class ValidationService : IValidationService
         if (email.Trim().Length > 150)
         {
             return "Email cannot exceed 150 characters.";
+        }
+
+        if (password is not null)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                return "Password is required.";
+            }
+
+            if (password.Length < 6)
+            {
+                return "Password must be at least 6 characters.";
+            }
         }
 
         return null;

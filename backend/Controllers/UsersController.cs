@@ -26,6 +26,39 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
+    /// Check if an email address is already registered
+    /// </summary>
+    [HttpGet("email/{email}")]
+    [ProducesResponseType(200)]
+    public ActionResult<bool> CheckEmailExists(string email)
+    {
+        return Ok(_userService.EmailExists(email));
+    }
+
+    /// <summary>
+    /// Login with email and password
+    /// </summary>
+    [HttpPost("login")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(401)]
+    public ActionResult<UserDto> Login(LoginRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+        {
+            return BadRequest(new { message = "Email and password are required." });
+        }
+
+        var user = _userService.Login(request);
+        if (user is null)
+        {
+            return Unauthorized(new { message = "Invalid email or password." });
+        }
+
+        return Ok(user);
+    }
+
+    /// <summary>
     /// Get user by ID
     /// </summary>
     [HttpGet("{id:int}")]
