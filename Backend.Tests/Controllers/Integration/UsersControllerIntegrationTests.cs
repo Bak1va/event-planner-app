@@ -1,4 +1,4 @@
-﻿using Backend.DTOs;
+using Backend.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
 
@@ -16,10 +16,11 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
     public void CreateUserEndpoint_GivenValidUserData_WhenCalled_ThenReturnsCreatedResponse()
     {
         // Given: Valid user creation request
-        var request = new UserCreateRequest 
-        { 
-            Name = "Integration User", 
-            Email = "integration@example.com" 
+        var request = new UserCreateRequest
+        {
+            Name = "Integration User",
+            Email = "integration@example.com",
+            Password = "password123"
         };
 
         // When
@@ -36,10 +37,11 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
     public void GetUserEndpoint_GivenCreatedUser_WhenCalled_ThenReturnsUserData()
     {
         // Given: A user has been created
-        var createRequest = new UserCreateRequest 
-        { 
-            Name = "Get User Test", 
-            Email = "getuser@example.com" 
+        var createRequest = new UserCreateRequest
+        {
+            Name = "Get User Test",
+            Email = "getuser@example.com",
+            Password = "password123"
         };
         var createdResult = Controller.CreateUser(createRequest);
         var createdUser = ((CreatedAtActionResult)createdResult.Result!).Value as UserDto;
@@ -58,8 +60,8 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
     public void GetAllUsersEndpoint_GivenMultipleUsersCreated_WhenCalled_ThenReturnsAllUsers()
     {
         // Given: Multiple users are created
-        var user1Request = new UserCreateRequest { Name = "User 1", Email = "user1@example.com" };
-        var user2Request = new UserCreateRequest { Name = "User 2", Email = "user2@example.com" };
+        var user1Request = new UserCreateRequest { Name = "User 1", Email = "user1@example.com", Password = "password123" };
+        var user2Request = new UserCreateRequest { Name = "User 2", Email = "user2@example.com", Password = "password123" };
         Controller.CreateUser(user1Request);
         Controller.CreateUser(user2Request);
 
@@ -77,19 +79,20 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
     public void UpdateUserEndpoint_GivenCreatedUser_WhenUpdated_ThenReturnsUpdatedData()
     {
         // Given: A user has been created
-        var createRequest = new UserCreateRequest 
-        { 
-            Name = "Original Name", 
-            Email = "original@example.com" 
+        var createRequest = new UserCreateRequest
+        {
+            Name = "Original Name",
+            Email = "original@example.com",
+            Password = "password123"
         };
         var createdResult = Controller.CreateUser(createRequest);
         var createdUser = ((CreatedAtActionResult)createdResult.Result!).Value as UserDto;
 
         // When: User is updated
-        var updateRequest = new UserUpdateRequest 
-        { 
-            Name = "Updated Name", 
-            Email = "updated@example.com" 
+        var updateRequest = new UserUpdateRequest
+        {
+            Name = "Updated Name",
+            Email = "updated@example.com"
         };
         var result = Controller.UpdateUser(createdUser!.Id, updateRequest);
 
@@ -104,10 +107,11 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
     public void DeleteUserEndpoint_GivenCreatedUser_WhenDeleted_ThenReturnsNoContent()
     {
         // Given: A user has been created
-        var createRequest = new UserCreateRequest 
-        { 
-            Name = "User to Delete", 
-            Email = "delete@example.com" 
+        var createRequest = new UserCreateRequest
+        {
+            Name = "User to Delete",
+            Email = "delete@example.com",
+            Password = "password123"
         };
         var createdResult = Controller.CreateUser(createRequest);
         var createdUser = ((CreatedAtActionResult)createdResult.Result!).Value as UserDto;
@@ -124,10 +128,11 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
     public void GetDeletedUserEndpoint_GivenDeletedUser_WhenCalled_ThenReturnsNotFound()
     {
         // Given: A user is created and then deleted
-        var createRequest = new UserCreateRequest 
-        { 
-            Name = "Temporary User", 
-            Email = "temp@example.com" 
+        var createRequest = new UserCreateRequest
+        {
+            Name = "Temporary User",
+            Email = "temp@example.com",
+            Password = "password123"
         };
         var createdResult = Controller.CreateUser(createRequest);
         var createdUser = ((CreatedAtActionResult)createdResult.Result!).Value as UserDto;
@@ -145,10 +150,11 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
     public void CreateUserWithInvalidEmail_GivenInvalidData_WhenCalled_ThenReturnsBadRequest()
     {
         // Given: Invalid user creation request (empty email)
-        var request = new UserCreateRequest 
-        { 
-            Name = "Invalid User", 
-            Email = "" 
+        var request = new UserCreateRequest
+        {
+            Name = "Invalid User",
+            Email = "",
+            Password = "password123"
         };
 
         // When
@@ -163,18 +169,20 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
     public void CreateDuplicateUser_GivenExistingEmail_WhenCreating_ThenReturnsConflict()
     {
         // Given: First user is created
-        var request1 = new UserCreateRequest 
-        { 
-            Name = "User One", 
-            Email = "duplicate@example.com" 
+        var request1 = new UserCreateRequest
+        {
+            Name = "User One",
+            Email = "duplicate@example.com",
+            Password = "password123"
         };
         Controller.CreateUser(request1);
 
         // When: Creating user with same email
-        var request2 = new UserCreateRequest 
-        { 
-            Name = "User Two", 
-            Email = "duplicate@example.com" 
+        var request2 = new UserCreateRequest
+        {
+            Name = "User Two",
+            Email = "duplicate@example.com",
+            Password = "password456"
         };
         var result = Controller.CreateUser(request2);
 
@@ -206,10 +214,11 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
         var initialCount = initialUsers.Count;
 
         // When: Create a user
-        var createRequest = new UserCreateRequest 
-        { 
-            Name = "Workflow User", 
-            Email = "workflow@example.com" 
+        var createRequest = new UserCreateRequest
+        {
+            Name = "Workflow User",
+            Email = "workflow@example.com",
+            Password = "password123"
         };
         var createResult = Controller.CreateUser(createRequest);
         var createdUser = ((CreatedAtActionResult)createResult.Result!).Value as UserDto;
@@ -219,10 +228,10 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
         var getUserDto = ((OkObjectResult)getResult.Result!).Value as UserDto;
 
         // And: Update the user
-        var updateRequest = new UserUpdateRequest 
-        { 
-            Name = "Updated Workflow User", 
-            Email = "updated-workflow@example.com" 
+        var updateRequest = new UserUpdateRequest
+        {
+            Name = "Updated Workflow User",
+            Email = "updated-workflow@example.com"
         };
         var updateResult = Controller.UpdateUser(createdUser.Id, updateRequest);
         var updatedUser = ((OkObjectResult)updateResult.Result!).Value as UserDto;
@@ -247,4 +256,3 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
         Assert.Equal(404, deletedNotFound.StatusCode);
     }
 }
-

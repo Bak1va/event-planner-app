@@ -2,13 +2,13 @@
 
 public interface IValidationService
 {
-    string? ValidateUserRequest(string? name, string? email);
-    string? ValidateEventRequest(string? name, string? status, string? description, string? imageUrl);
+    string? ValidateUserRequest(string? name, string? email, string? password = null);
+    string? ValidateEventRequest(string? name, string? status, string? description, string? imageUrl = null);
 }
 
 public class ValidationService : IValidationService
 {
-    public string? ValidateUserRequest(string? name, string? email)
+    public string? ValidateUserRequest(string? name, string? email, string? password = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -30,10 +30,23 @@ public class ValidationService : IValidationService
             return "Email cannot exceed 150 characters.";
         }
 
+        if (password is not null)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                return "Password is required.";
+            }
+
+            if (password.Length < 6)
+            {
+                return "Password must be at least 6 characters.";
+            }
+        }
+
         return null;
     }
 
-    public string? ValidateEventRequest(string? name, string? status, string? description, string? imageUrl)
+    public string? ValidateEventRequest(string? name, string? status, string? description, string? imageUrl = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -58,11 +71,6 @@ public class ValidationService : IValidationService
         if (description is not null && description.Trim().Length > 1000)
         {
             return "Description cannot exceed 1000 characters.";
-        }
-
-        if (imageUrl is not null && imageUrl.Trim().Length > 2000)
-        {
-            return "ImageUrl cannot exceed 2000 characters.";
         }
 
         return null;

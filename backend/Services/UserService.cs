@@ -1,4 +1,6 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text;
 using Backend.DTOs;
 using Backend.Models;
 
@@ -8,7 +10,9 @@ public interface IUserService
 {
     IEnumerable<UserDto> GetAllUsers();
     UserDto? GetUserById(int id);
+    bool EmailExists(string email);
     UserDto CreateUser(UserCreateRequest request);
+    UserDto? Login(LoginRequest request);
     UserDto UpdateUser(int id, UserUpdateRequest request);
     bool DeleteUser(int id);
 }
@@ -48,15 +52,21 @@ public class UserService : IUserService
         return null;
     }
 
+    public bool EmailExists(string email)
+    {
+        return _usersStore.Values.Any(u =>
+            u.Email.Equals(email.Trim(), StringComparison.OrdinalIgnoreCase));
+    }
+
     public UserDto CreateUser(UserCreateRequest request)
     {
-        var validationError = _validationService.ValidateUserRequest(request.Name, request.Email);
+        var validationError = _validationService.ValidateUserRequest(request.Name, request.Email, request.Password);
         if (validationError is not null)
         {
             throw new ArgumentException(validationError);
         }
 
-        if (_usersStore.Values.Any(u => u.Email.Equals(request.Email.Trim(), StringComparison.OrdinalIgnoreCase)))
+        if (EmailExists(request.Email))
         {
             throw new InvalidOperationException("A user with this email already exists.");
         }
@@ -68,11 +78,30 @@ public class UserService : IUserService
             id,
             request.Name.Trim(),
             request.Email.Trim(),
+            HashPassword(request.Password),
             now,
             now
         );
 
         _usersStore[id] = user;
+        return MapToDto(user);
+    }
+
+    public UserDto? Login(LoginRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+        {
+            return null;
+        }
+
+        var user = _usersStore.Values.FirstOrDefault(u =>
+            u.Email.Equals(request.Email.Trim(), StringComparison.OrdinalIgnoreCase));
+
+        if (user is null || !VerifyPassword(request.Password, user.PasswordHash))
+        {
+            return null;
+        }
+
         return MapToDto(user);
     }
 
@@ -120,7 +149,34 @@ public class UserService : IUserService
         return _usersStore.TryRemove(id, out _);
     }
 
-    private UserDto MapToDto(User user)
+    private static string HashPassword(string password)
+    {
+        byte[] salt = RandomNumberGenerator.GetBytes(16);
+        byte[] hash = Rfc2898DeriveBytes.Pbkdf2(
+            Encoding.UTF8.GetBytes(password),
+            salt,
+            100_000,
+            HashAlgorithmName.SHA256,
+            32);
+        return Convert.ToBase64String(salt) + ":" + Convert.ToBase64String(hash);
+    }
+
+    private static bool VerifyPassword(string password, string storedHash)
+    {
+        var parts = storedHash.Split(':');
+        if (parts.Length != 2) return false;
+        byte[] salt = Convert.FromBase64String(parts[0]);
+        byte[] storedHashBytes = Convert.FromBase64String(parts[1]);
+        byte[] inputHash = Rfc2898DeriveBytes.Pbkdf2(
+            Encoding.UTF8.GetBytes(password),
+            salt,
+            100_000,
+            HashAlgorithmName.SHA256,
+            32);
+        return CryptographicOperations.FixedTimeEquals(inputHash, storedHashBytes);
+    }
+
+    private static UserDto MapToDto(User user)
     {
         return new UserDto
         {
@@ -132,4 +188,3 @@ public class UserService : IUserService
         };
     }
 }
-

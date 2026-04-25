@@ -26,13 +26,13 @@ public class UserServiceUnitTestBase
 
     protected void SetupValidUserValidation()
     {
-        MockValidationService.Setup(v => v.ValidateUserRequest(It.IsAny<string>(), It.IsAny<string>()))
+        MockValidationService.Setup(v => v.ValidateUserRequest(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .Returns((string?)null);
     }
 
     protected void SetupValidationError(string errorMessage)
     {
-        MockValidationService.Setup(v => v.ValidateUserRequest(It.IsAny<string>(), It.IsAny<string>()))
+        MockValidationService.Setup(v => v.ValidateUserRequest(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .Returns(errorMessage);
     }
 
