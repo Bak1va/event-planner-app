@@ -3,7 +3,7 @@
 public interface IValidationService
 {
     string? ValidateUserRequest(string? name, string? email, string? password = null);
-    string? ValidateEventRequest(string? name, string? status, string? description);
+    string? ValidateEventRequest(string? name, string? status, string? description, string? imageUrl = null);
 }
 
 public class ValidationService : IValidationService
@@ -46,7 +46,7 @@ public class ValidationService : IValidationService
         return null;
     }
 
-    public string? ValidateEventRequest(string? name, string? status, string? description)
+    public string? ValidateEventRequest(string? name, string? status, string? description, string? imageUrl = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
