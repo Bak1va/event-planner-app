@@ -6,6 +6,7 @@ public class EventCreateRequest
     public string Status { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? ImageUrl { get; set; }
+    public DateTime EventDate { get; set; }
     public int UserId { get; set; }
 }
 
@@ -15,6 +16,7 @@ public class EventUpdateRequest
     public string Status { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? ImageUrl { get; set; }
+    public DateTime EventDate { get; set; }
     public int UserId { get; set; }
 }
 
@@ -25,6 +27,7 @@ public class EventDto
     public string Status { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string ImageUrl { get; set; } = string.Empty;
+    public DateTime EventDate { get; set; }
     public DateTime DateAdded { get; set; }
     public DateTime DateModified { get; set; }
     public int UserId { get; set; }
