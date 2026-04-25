@@ -3,7 +3,7 @@
 public interface IValidationService
 {
     string? ValidateUserRequest(string? name, string? email, string? password = null);
-    string? ValidateEventRequest(string? name, string? status, string? description, string? imageUrl = null);
+    string? ValidateEventRequest(string? name, string? status, string? description, string? imageUrl = null, DateTime? eventDate = null);
 }
 
 public class ValidationService : IValidationService
@@ -46,7 +46,7 @@ public class ValidationService : IValidationService
         return null;
     }
 
-    public string? ValidateEventRequest(string? name, string? status, string? description, string? imageUrl = null)
+    public string? ValidateEventRequest(string? name, string? status, string? description, string? imageUrl = null, DateTime? eventDate = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -71,6 +71,11 @@ public class ValidationService : IValidationService
         if (description is not null && description.Trim().Length > 1000)
         {
             return "Description cannot exceed 1000 characters.";
+        }
+
+        if (eventDate.HasValue && eventDate.Value.ToUniversalTime() <= DateTime.UtcNow)
+        {
+            return "Event date must be in the future.";
         }
 
         return null;

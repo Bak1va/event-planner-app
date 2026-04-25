@@ -58,7 +58,7 @@ public class EventService : IEventService
 
     public EventDto CreateEvent(EventCreateRequest request)
     {
-        var validationError = _validationService.ValidateEventRequest(request.Name, request.Status, request.Description, request.ImageUrl);
+        var validationError = _validationService.ValidateEventRequest(request.Name, request.Status, request.Description, request.ImageUrl, request.EventDate);
         if (validationError is not null)
         {
             throw new ArgumentException(validationError);
@@ -78,6 +78,7 @@ public class EventService : IEventService
             request.Status.Trim(),
             request.Description?.Trim() ?? string.Empty,
             request.ImageUrl?.Trim() ?? string.Empty,
+            request.EventDate.ToUniversalTime(),
             now,
             now,
             request.UserId
@@ -94,7 +95,7 @@ public class EventService : IEventService
             throw new KeyNotFoundException($"Event with id {id} was not found.");
         }
 
-        var validationError = _validationService.ValidateEventRequest(request.Name, request.Status, request.Description, request.ImageUrl);
+        var validationError = _validationService.ValidateEventRequest(request.Name, request.Status, request.Description, request.ImageUrl, request.EventDate);
         if (validationError is not null)
         {
             throw new ArgumentException(validationError);
@@ -111,6 +112,7 @@ public class EventService : IEventService
             Status = request.Status.Trim(),
             Description = request.Description?.Trim() ?? string.Empty,
             ImageUrl = request.ImageUrl?.Trim() ?? string.Empty,
+            EventDate = request.EventDate.ToUniversalTime(),
             UserId = request.UserId,
             DateModified = DateTime.UtcNow
         };
@@ -138,6 +140,7 @@ public class EventService : IEventService
             Status = eventItem.Status,
             Description = eventItem.Description,
             ImageUrl = eventItem.ImageUrl,
+            EventDate = eventItem.EventDate,
             DateAdded = eventItem.DateAdded,
             DateModified = eventItem.DateModified,
             UserId = eventItem.UserId
