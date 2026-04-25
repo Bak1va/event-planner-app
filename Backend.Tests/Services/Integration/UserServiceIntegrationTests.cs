@@ -1,4 +1,4 @@
-﻿using Backend.DTOs;
+using Backend.DTOs;
 using Xunit;
 
 namespace Backend.Tests.Services.Integration;
@@ -15,10 +15,11 @@ public class UserServiceIntegrationTests : UserServiceIntegrationTestBase
     public void CreateAndRetrieveUser_GivenValidUserData_WhenCreatedAndRetrieved_ThenDataIsPreserved()
     {
         // Given: Valid user creation request
-        var request = new UserCreateRequest 
-        { 
-            Name = "Integration Test User", 
-            Email = "integration@example.com" 
+        var request = new UserCreateRequest
+        {
+            Name = "Integration Test User",
+            Email = "integration@example.com",
+            Password = "password123"
         };
 
         // When
@@ -35,18 +36,19 @@ public class UserServiceIntegrationTests : UserServiceIntegrationTestBase
     public void CreateUpdateAndRetrieveUser_GivenUserOperations_WhenPerformed_ThenAllChangesArePersisted()
     {
         // Given: A user is created
-        var createRequest = new UserCreateRequest 
-        { 
-            Name = "Original Name", 
-            Email = "original@example.com" 
+        var createRequest = new UserCreateRequest
+        {
+            Name = "Original Name",
+            Email = "original@example.com",
+            Password = "password123"
         };
         var createdUser = UserService.CreateUser(createRequest);
 
         // When: User is updated
-        var updateRequest = new UserUpdateRequest 
-        { 
-            Name = "Updated Name", 
-            Email = "updated@example.com" 
+        var updateRequest = new UserUpdateRequest
+        {
+            Name = "Updated Name",
+            Email = "updated@example.com"
         };
         var updatedUser = UserService.UpdateUser(createdUser.Id, updateRequest);
 
@@ -64,10 +66,11 @@ public class UserServiceIntegrationTests : UserServiceIntegrationTestBase
     public void CreateAndDeleteUser_GivenCreatedUser_WhenDeleted_ThenCannotBeRetrieved()
     {
         // Given: A user is created
-        var request = new UserCreateRequest 
-        { 
-            Name = "User to Delete", 
-            Email = "delete@example.com" 
+        var request = new UserCreateRequest
+        {
+            Name = "User to Delete",
+            Email = "delete@example.com",
+            Password = "password123"
         };
         var createdUser = UserService.CreateUser(request);
 
@@ -83,10 +86,11 @@ public class UserServiceIntegrationTests : UserServiceIntegrationTestBase
     public void ValidateUserCreation_GivenNameTooLong_WhenCreating_ThenThrowsArgumentException()
     {
         // Given: User request with name exceeding 100 characters
-        var request = new UserCreateRequest 
-        { 
+        var request = new UserCreateRequest
+        {
             Name = new string('A', 101),
-            Email = "test@example.com" 
+            Email = "test@example.com",
+            Password = "password123"
         };
 
         // When & Then
@@ -98,10 +102,11 @@ public class UserServiceIntegrationTests : UserServiceIntegrationTestBase
     public void ValidateUserCreation_GivenEmailTooLong_WhenCreating_ThenThrowsArgumentException()
     {
         // Given: User request with email exceeding 150 characters
-        var request = new UserCreateRequest 
-        { 
+        var request = new UserCreateRequest
+        {
             Name = "Valid Name",
-            Email = new string('a', 140) + "@example.com" // > 150 chars
+            Email = new string('a', 140) + "@example.com", // > 150 chars
+            Password = "password123"
         };
 
         // When & Then
@@ -116,10 +121,11 @@ public class UserServiceIntegrationTests : UserServiceIntegrationTestBase
         var users = new List<UserDto>();
         for (int i = 1; i <= 5; i++)
         {
-            var request = new UserCreateRequest 
-            { 
-                Name = $"User {i}", 
-                Email = $"user{i}@example.com" 
+            var request = new UserCreateRequest
+            {
+                Name = $"User {i}",
+                Email = $"user{i}@example.com",
+                Password = "password123"
             };
             users.Add(UserService.CreateUser(request));
         }
@@ -136,10 +142,11 @@ public class UserServiceIntegrationTests : UserServiceIntegrationTestBase
     public void CreateUserWithWhitespace_GivenRequestWithWhitespace_WhenCreated_ThenWhitespaceIsTrimmed()
     {
         // Given: User request with leading/trailing whitespace
-        var request = new UserCreateRequest 
-        { 
-            Name = "  Padded Name  ", 
-            Email = "  padded@example.com  " 
+        var request = new UserCreateRequest
+        {
+            Name = "  Padded Name  ",
+            Email = "  padded@example.com  ",
+            Password = "password123"
         };
 
         // When
@@ -154,18 +161,20 @@ public class UserServiceIntegrationTests : UserServiceIntegrationTestBase
     public void DuplicateEmailValidation_GivenTwoUsersWithSameEmail_WhenSecondCreated_ThenThrowsException()
     {
         // Given: First user is created
-        var request1 = new UserCreateRequest 
-        { 
-            Name = "User One", 
-            Email = "duplicate@example.com" 
+        var request1 = new UserCreateRequest
+        {
+            Name = "User One",
+            Email = "duplicate@example.com",
+            Password = "password123"
         };
         UserService.CreateUser(request1);
 
         // When & Then: Creating user with same email fails
-        var request2 = new UserCreateRequest 
-        { 
-            Name = "User Two", 
-            Email = "duplicate@example.com" 
+        var request2 = new UserCreateRequest
+        {
+            Name = "User Two",
+            Email = "duplicate@example.com",
+            Password = "password456"
         };
         var exception = Assert.Throws<InvalidOperationException>(() => UserService.CreateUser(request2));
         Assert.Contains("A user with this email already exists", exception.Message);
@@ -175,21 +184,22 @@ public class UserServiceIntegrationTests : UserServiceIntegrationTestBase
     public void CaseInsensitiveEmailValidation_GivenUserWithMixedCaseEmail_WhenDuplicateCreated_ThenThrowsException()
     {
         // Given: User is created with specific email case
-        var request1 = new UserCreateRequest 
-        { 
-            Name = "User One", 
-            Email = "Test@Example.Com" 
+        var request1 = new UserCreateRequest
+        {
+            Name = "User One",
+            Email = "Test@Example.Com",
+            Password = "password123"
         };
         UserService.CreateUser(request1);
 
         // When & Then: Creating user with different case of same email fails
-        var request2 = new UserCreateRequest 
-        { 
-            Name = "User Two", 
-            Email = "test@example.com" 
+        var request2 = new UserCreateRequest
+        {
+            Name = "User Two",
+            Email = "test@example.com",
+            Password = "password456"
         };
         var exception = Assert.Throws<InvalidOperationException>(() => UserService.CreateUser(request2));
         Assert.Contains("A user with this email already exists", exception.Message);
     }
 }
-
