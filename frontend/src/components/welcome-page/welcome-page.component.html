@@ -11,7 +11,7 @@
   <section class="events-section" aria-label="List of events">
     <h3>Upcoming events</h3>
     <div class="events-list">
-      @for (event of events; track event.title) {
+      @for (event of events; track event.id) {
         <app-event-card [event]="event"></app-event-card>
       }
     </div>
