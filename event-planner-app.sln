@@ -4,8 +4,6 @@ VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backend", "backend\Backend.csproj", "{B5CEE1AB-68C5-FCEC-EA61-653FFB609ED2}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend.tests", "backend.tests", "{C0C6E044-CB20-653A-D6C2-4CA8FE87111B}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backend.Tests", "backend.tests\Backend.Tests.csproj", "{049CDA16-F2FC-415E-B825-68EEC43B7F27}"
 EndProject
 Global
@@ -47,7 +45,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{049CDA16-F2FC-415E-B825-68EEC43B7F27} = {C0C6E044-CB20-653A-D6C2-4CA8FE87111B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5C053A22-0329-40F1-9739-E374322952C3}
