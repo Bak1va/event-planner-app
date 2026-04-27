@@ -26,6 +26,7 @@ builder.Services.AddCors(options =>
 // Note: We register them without circular dependencies and wire them up after
 builder.Services.AddSingleton<IValidationService, ValidationService>();
 builder.Services.AddSingleton<IUserService, UserService>();
+builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddSingleton<IEventService, EventService>();
 
 // Build the app
