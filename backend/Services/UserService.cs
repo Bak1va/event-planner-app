@@ -12,6 +12,7 @@ public interface IUserService
     UserDto? GetUserById(int id);
     bool EmailExists(string email);
     UserDto CreateUser(UserCreateRequest request);
+    UserDto SignUp(SignUpRequest request);
     UserDto? Login(LoginRequest request);
     UserDto UpdateUser(int id, UserUpdateRequest request);
     bool DeleteUser(int id);
@@ -73,15 +74,60 @@ public class UserService : IUserService
 
         var id = Interlocked.Increment(ref _nextUserId);
         var now = DateTime.UtcNow;
+        var name = request.Name.Trim();
 
-        var user = new User(
-            id,
-            request.Name.Trim(),
-            request.Email.Trim(),
-            HashPassword(request.Password),
-            now,
-            now
-        );
+        var user = new User
+        {
+            Id = id,
+            Name = name,
+            FirstName = name,
+            LastName = string.Empty,
+            PhoneNumber = string.Empty,
+            Email = request.Email.Trim(),
+            PasswordHash = HashPassword(request.Password),
+            DateAdded = now,
+            DateModified = now
+        };
+
+        _usersStore[id] = user;
+        return MapToDto(user);
+    }
+
+    public UserDto SignUp(SignUpRequest request)
+    {
+        var validationError = _validationService.ValidateSignUpRequest(
+            request.FirstName,
+            request.LastName,
+            request.Email,
+            request.Password,
+            request.PhoneNumber);
+        if (validationError is not null)
+        {
+            throw new ArgumentException(validationError);
+        }
+
+        if (EmailExists(request.Email))
+        {
+            throw new InvalidOperationException("A user with this email already exists.");
+        }
+
+        var id = Interlocked.Increment(ref _nextUserId);
+        var now = DateTime.UtcNow;
+        var firstName = request.FirstName.Trim();
+        var lastName = request.LastName.Trim();
+
+        var user = new User
+        {
+            Id = id,
+            Name = string.Join(' ', new[] { firstName, lastName }.Where(part => !string.IsNullOrWhiteSpace(part))),
+            FirstName = firstName,
+            LastName = lastName,
+            PhoneNumber = request.PhoneNumber.Trim(),
+            Email = request.Email.Trim(),
+            PasswordHash = HashPassword(request.Password),
+            DateAdded = now,
+            DateModified = now
+        };
 
         _usersStore[id] = user;
         return MapToDto(user);
@@ -126,6 +172,8 @@ public class UserService : IUserService
         var updated = existingUser with
         {
             Name = request.Name.Trim(),
+            FirstName = request.Name.Trim(),
+            LastName = string.Empty,
             Email = request.Email.Trim(),
             DateModified = DateTime.UtcNow
         };
@@ -182,6 +230,9 @@ public class UserService : IUserService
         {
             Id = user.Id,
             Name = user.Name,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            PhoneNumber = user.PhoneNumber,
             Email = user.Email,
             DateAdded = user.DateAdded,
             DateModified = user.DateModified
