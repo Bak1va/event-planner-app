@@ -33,28 +33,44 @@
     } @else {
       <div class="events-list">
         @for (event of events; track event.id) {
-          <app-event-card [event]="event"></app-event-card>
+          <app-event-card
+            [event]="event"
+            [isDeleting]="isDeleting && eventPendingDelete?.id === event.id"
+            (edit)="openEditModal(event)"
+            (deleteRequested)="openDeleteModal(event)"
+          ></app-event-card>
         }
       </div>
     }
   </section>
 </section>
 
-@if (isCreateModalOpen) {
-  <div class="modal-backdrop" (click)="closeCreateModal()">
+@if (isFormModalOpen) {
+  <div class="modal-backdrop" (click)="closeFormModal()">
     <section
       class="modal-panel"
-      aria-label="Create event dialog"
+      [attr.aria-label]="formMode === 'edit' ? 'Edit event dialog' : 'Create event dialog'"
       role="dialog"
       aria-modal="true"
       (click)="$event.stopPropagation()"
     >
       <div class="modal-header">
         <div class="form-heading">
-          <h3>Create a new event</h3>
-          <p>Share the essentials guests care about most so your listing is ready to go the moment you save it.</p>
+          <h3>{{ formMode === 'edit' ? 'Update event details' : 'Create a new event' }}</h3>
+          <p>
+            {{
+              formMode === 'edit'
+                ? 'Keep your listing current by updating the schedule, status, and guest-facing details in one place.'
+                : 'Share the essentials guests care about most so your listing is ready to go the moment you save it.'
+            }}
+          </p>
         </div>
-        <button class="close-button" type="button" (click)="closeCreateModal()" aria-label="Close create event dialog">
+        <button
+          class="close-button"
+          type="button"
+          (click)="closeFormModal()"
+          [attr.aria-label]="formMode === 'edit' ? 'Close edit event dialog' : 'Close create event dialog'"
+        >
           ×
         </button>
       </div>
@@ -131,12 +147,51 @@
         }
 
         <div class="modal-actions">
-          <button class="secondary-button" type="button" (click)="closeCreateModal()">Cancel</button>
+          <button class="secondary-button" type="button" (click)="closeFormModal()">Cancel</button>
           <button class="submit-button" type="submit" [disabled]="eventForm.invalid || isSaving">
-            {{ isSaving ? 'Saving...' : 'Save event' }}
+            {{
+              isSaving
+                ? (formMode === 'edit' ? 'Saving changes...' : 'Saving...')
+                : (formMode === 'edit' ? 'Save changes' : 'Save event')
+            }}
           </button>
         </div>
       </form>
+    </section>
+  </div>
+}
+
+@if (isDeleteModalOpen && eventPendingDelete) {
+  <div class="modal-backdrop" (click)="closeDeleteModal()">
+    <section
+      class="modal-panel modal-panel-compact"
+      aria-label="Delete event dialog"
+      role="dialog"
+      aria-modal="true"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="modal-header">
+        <div class="form-heading">
+          <h3>Delete this event?</h3>
+          <p>
+            <strong>{{ eventPendingDelete.title }}</strong> will be removed from the event lineup. This action cannot be undone.
+          </p>
+        </div>
+        <button class="close-button" type="button" (click)="closeDeleteModal()" aria-label="Close delete event dialog">
+          ×
+        </button>
+      </div>
+
+      @if (saveError) {
+        <p class="form-message form-message-error">{{ saveError }}</p>
+      }
+
+      <div class="modal-actions">
+        <button class="secondary-button" type="button" [disabled]="isDeleting" (click)="closeDeleteModal()">Keep event</button>
+        <button class="submit-button submit-button-danger" type="button" [disabled]="isDeleting" (click)="confirmDelete()">
+          {{ isDeleting ? 'Deleting...' : 'Delete event' }}
+        </button>
+      </div>
     </section>
   </div>
 }

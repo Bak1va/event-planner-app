@@ -15,6 +15,55 @@
   transition: transform 180ms ease, box-shadow 220ms ease;
 }
 
+.card-actions {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  z-index: 1;
+  display: flex;
+  gap: 0.45rem;
+}
+
+.card-action-button {
+  display: grid;
+  place-items: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  padding: 0;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.82);
+  color: #f8fafc;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, opacity 160ms ease;
+}
+
+.card-action-button svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.card-action-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(103, 232, 249, 0.7);
+}
+
+.card-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.card-action-button-danger {
+  border-color: rgba(251, 113, 133, 0.38);
+  color: #fecdd3;
+}
+
+.card-action-button-danger:hover:not(:disabled) {
+  border-color: rgba(251, 113, 133, 0.75);
+  background: rgba(127, 29, 29, 0.55);
+}
+
 .event-card::before {
   content: '';
   position: absolute;

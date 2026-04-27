@@ -58,7 +58,12 @@ export class WelcomePageComponent implements OnInit {
   protected events: EventCardData[] = [];
   protected isLoading = false;
   protected isSaving = false;
-  protected isCreateModalOpen = false;
+  protected isDeleting = false;
+  protected isFormModalOpen = false;
+  protected isDeleteModalOpen = false;
+  protected formMode: 'create' | 'edit' = 'create';
+  protected selectedEventId: number | null = null;
+  protected eventPendingDelete: EventCardData | null = null;
   protected loadError = '';
   protected saveError = '';
   protected saveSuccess = '';
@@ -73,14 +78,46 @@ export class WelcomePageComponent implements OnInit {
 
   protected openCreateModal(): void {
     this.saveSuccess = '';
-    this.isCreateModalOpen = true;
+    this.saveError = '';
+    this.formMode = 'create';
+    this.selectedEventId = null;
+    this.resetForm();
+    this.isFormModalOpen = true;
   }
 
-  protected closeCreateModal(): void {
-    this.isCreateModalOpen = false;
-    this.saveError = '';
+  protected openEditModal(event: EventCardData): void {
     this.saveSuccess = '';
+    this.saveError = '';
+    this.formMode = 'edit';
+    this.selectedEventId = event.id;
+    this.eventForm.reset({
+      name: event.title,
+      status: event.status,
+      eventDate: this.toDateTimeLocalValue(event.eventDate),
+      description: event.description,
+      imageUrl: event.sourceImageUrl
+    });
+    this.isFormModalOpen = true;
+  }
+
+  protected closeFormModal(): void {
+    this.isFormModalOpen = false;
+    this.saveError = '';
+    this.selectedEventId = null;
+    this.formMode = 'create';
     this.resetForm();
+  }
+
+  protected openDeleteModal(event: EventCardData): void {
+    this.saveError = '';
+    this.eventPendingDelete = event;
+    this.isDeleteModalOpen = true;
+  }
+
+  protected closeDeleteModal(): void {
+    this.isDeleteModalOpen = false;
+    this.eventPendingDelete = null;
+    this.saveError = '';
   }
 
   protected submitForm(): void {
@@ -93,17 +130,20 @@ export class WelcomePageComponent implements OnInit {
     }
 
     const formValue = this.eventForm.getRawValue();
+    const payload = {
+      name: formValue.name.trim(),
+      status: formValue.status.trim(),
+      eventDate: new Date(formValue.eventDate).toISOString(),
+      description: this.normalizeOptionalValue(formValue.description),
+      imageUrl: this.normalizeOptionalValue(formValue.imageUrl),
+      userId: this.defaultUserId
+    };
+    const request = this.formMode === 'edit' && this.selectedEventId !== null
+      ? this.eventService.updateEvent(this.selectedEventId, payload)
+      : this.eventService.createEvent(payload);
 
     this.isSaving = true;
-    this.eventService
-      .createEvent({
-        name: formValue.name.trim(),
-        status: formValue.status.trim(),
-        eventDate: new Date(formValue.eventDate).toISOString(),
-        description: this.normalizeOptionalValue(formValue.description),
-        imageUrl: this.normalizeOptionalValue(formValue.imageUrl),
-        userId: this.defaultUserId
-      })
+    request
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => {
@@ -112,14 +152,58 @@ export class WelcomePageComponent implements OnInit {
         })
       )
       .subscribe({
-        next: (createdEvent) => {
-          this.closeCreateModal();
-          this.saveSuccess = `"${createdEvent.name}" is now live in your event lineup.`;
+        next: (savedEvent) => {
+          const wasEdit = this.formMode === 'edit';
+          this.closeFormModal();
+          this.saveSuccess = wasEdit
+            ? `"${savedEvent.name}" has been updated.`
+            : `"${savedEvent.name}" is now live in your event lineup.`;
           this.loadEvents();
           this.changeDetectorRef.markForCheck();
         },
         error: (error: HttpErrorResponse) => {
-          this.saveError = this.extractErrorMessage(error, 'We could not publish this event. Please review the details and try again.');
+          this.saveError = this.extractErrorMessage(
+            error,
+            this.formMode === 'edit'
+              ? 'We could not save your changes. Please review the details and try again.'
+              : 'We could not publish this event. Please review the details and try again.'
+          );
+          this.changeDetectorRef.markForCheck();
+        }
+      });
+  }
+
+  protected confirmDelete(): void {
+    const eventToDelete = this.eventPendingDelete;
+    if (!eventToDelete || this.isDeleting) {
+      return;
+    }
+
+    this.saveSuccess = '';
+    this.saveError = '';
+    this.isDeleting = true;
+
+    this.eventService
+      .deleteEvent(eventToDelete.id)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.isDeleting = false;
+          this.changeDetectorRef.markForCheck();
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.closeDeleteModal();
+          this.saveSuccess = `"${eventToDelete.title}" has been removed from the lineup.`;
+          this.loadEvents();
+          this.changeDetectorRef.markForCheck();
+        },
+        error: (error: HttpErrorResponse) => {
+          this.saveError = this.extractErrorMessage(
+            error,
+            'We could not delete this event right now. Please try again in a moment.'
+          );
           this.changeDetectorRef.markForCheck();
         }
       });
@@ -175,7 +259,11 @@ export class WelcomePageComponent implements OnInit {
       date: formattedDate,
       location: `Status: ${event.status}`,
       description: event.description,
-      imageUrl: event.imageUrl || this.fallbackImages[index % this.fallbackImages.length]
+      imageUrl: event.imageUrl || this.fallbackImages[index % this.fallbackImages.length],
+      sourceImageUrl: event.imageUrl,
+      status: event.status,
+      eventDate: event.eventDate,
+      userId: event.userId
     };
   }
 
@@ -199,8 +287,13 @@ export class WelcomePageComponent implements OnInit {
     defaultDate.setDate(defaultDate.getDate() + 7);
     defaultDate.setHours(18, 0, 0, 0);
 
-    const timezoneOffset = defaultDate.getTimezoneOffset() * 60_000;
-    return new Date(defaultDate.getTime() - timezoneOffset).toISOString().slice(0, 16);
+    return this.toDateTimeLocalValue(defaultDate.toISOString());
+  }
+
+  private toDateTimeLocalValue(value: string): string {
+    const sourceDate = new Date(value);
+    const timezoneOffset = sourceDate.getTimezoneOffset() * 60_000;
+    return new Date(sourceDate.getTime() - timezoneOffset).toISOString().slice(0, 16);
   }
 
   private futureDateValidator(control: AbstractControl<string>): ValidationErrors | null {

@@ -6,6 +6,13 @@ import { EventService } from '../../services/event.service';
 import { EventDto } from '../../DTOs/event.dto';
 
 describe('WelcomePageComponent', () => {
+  let eventServiceMock: {
+    getAllEvents: jasmine.Spy;
+    createEvent: jasmine.Spy;
+    updateEvent: jasmine.Spy;
+    deleteEvent: jasmine.Spy;
+  };
+
   const mockEvents: EventDto[] = [
     {
       id: 1,
@@ -32,8 +39,11 @@ describe('WelcomePageComponent', () => {
   ];
 
   beforeEach(async () => {
-    const eventServiceMock = {
-      getAllEvents: () => of(mockEvents)
+    eventServiceMock = {
+      getAllEvents: jasmine.createSpy('getAllEvents').and.returnValue(of(mockEvents)),
+      createEvent: jasmine.createSpy('createEvent').and.returnValue(of(mockEvents[0])),
+      updateEvent: jasmine.createSpy('updateEvent').and.returnValue(of(mockEvents[0])),
+      deleteEvent: jasmine.createSpy('deleteEvent').and.returnValue(of(void 0))
     };
 
     await TestBed.configureTestingModule({
@@ -100,5 +110,87 @@ describe('WelcomePageComponent', () => {
     fixture.detectChanges();
 
     expect(compiled.querySelector('[role="dialog"]')).not.toBeNull();
+  });
+
+  it('should open the edit modal from an event card action', () => {
+    const fixture = TestBed.createComponent(WelcomePageComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const editButton = compiled.querySelector<HTMLButtonElement>('[aria-label="Edit event"]');
+
+    editButton?.click();
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('[aria-label="Edit event dialog"]')).not.toBeNull();
+    expect(compiled.textContent).toContain('Update event details');
+  });
+
+  it('should call updateEvent when saving edits', () => {
+    const fixture = TestBed.createComponent(WelcomePageComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.openEditModal({
+      id: 1,
+      title: 'Frontend Workshop',
+      date: 'May 1, 2026, 6:30 PM',
+      location: 'Status: Scheduled',
+      description: 'A workshop focused on modern Angular testing.',
+      imageUrl: 'https://example.com/workshop.jpg',
+      sourceImageUrl: 'https://example.com/workshop.jpg',
+      status: 'Scheduled',
+      eventDate: '2026-05-01T18:30:00Z',
+      userId: 10
+    });
+    fixture.detectChanges();
+
+    fixture.componentInstance['eventForm'].patchValue({
+      name: 'Frontend Workshop Updated',
+      status: 'Open',
+      eventDate: '2026-05-08T18:30',
+      description: 'Updated details',
+      imageUrl: 'https://example.com/updated.jpg'
+    });
+
+    fixture.componentInstance.submitForm();
+
+    expect(eventServiceMock.updateEvent).toHaveBeenCalled();
+    expect(eventServiceMock.createEvent).not.toHaveBeenCalled();
+  });
+
+  it('should open the delete confirmation modal from an event card action', () => {
+    const fixture = TestBed.createComponent(WelcomePageComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const deleteButton = compiled.querySelector<HTMLButtonElement>('[aria-label="Delete event"]');
+
+    deleteButton?.click();
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('[aria-label="Delete event dialog"]')).not.toBeNull();
+    expect(compiled.textContent).toContain('Delete this event?');
+  });
+
+  it('should call deleteEvent after confirming delete', () => {
+    const fixture = TestBed.createComponent(WelcomePageComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.openDeleteModal({
+      id: 1,
+      title: 'Frontend Workshop',
+      date: 'May 1, 2026, 6:30 PM',
+      location: 'Status: Scheduled',
+      description: 'A workshop focused on modern Angular testing.',
+      imageUrl: 'https://example.com/workshop.jpg',
+      sourceImageUrl: 'https://example.com/workshop.jpg',
+      status: 'Scheduled',
+      eventDate: '2026-05-01T18:30:00Z',
+      userId: 10
+    });
+
+    fixture.componentInstance.confirmDelete();
+
+    expect(eventServiceMock.deleteEvent).toHaveBeenCalledWith(1);
   });
 });

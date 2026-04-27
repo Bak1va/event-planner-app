@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { EventCardData } from '../../models/event-card-data.model';
 
 @Component({
@@ -9,4 +9,7 @@ import { EventCardData } from '../../models/event-card-data.model';
 })
 export class EventCardComponent {
   readonly event = input.required<EventCardData>();
+  readonly isDeleting = input(false);
+  readonly edit = output<void>();
+  readonly deleteRequested = output<void>();
 }
