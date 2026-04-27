@@ -44,21 +44,18 @@ public class UsersControllerUpdateUserTests : UsersControllerUnitTestBase
     [Fact]
     public void UpdateUser_GivenUserNotFound_WhenCalled_ThenReturnsNotFound()
     {
-        // Given: User does not exist
+        // Given: Attempting to update another user's data
         var request = new UserUpdateRequest 
         { 
             Name = "John", 
             Email = "john@example.com" 
         };
-        MockUserService.Setup(s => s.UpdateUser(999, request))
-            .Throws(new KeyNotFoundException("User with id 999 was not found."));
 
         // When
         var result = Controller.UpdateUser(999, request);
 
         // Then
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
-        Assert.Equal(404, notFoundResult.StatusCode);
+        var forbidResult = Assert.IsType<ForbidResult>(result.Result);
     }
 
     [Fact]

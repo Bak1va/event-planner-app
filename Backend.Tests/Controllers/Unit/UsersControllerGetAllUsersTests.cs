@@ -23,10 +23,8 @@ public class UsersControllerGetAllUsersTests : UsersControllerUnitTestBase
         var result = Controller.GetAllUsers();
 
         // Then
-        var okResult = Assert.IsType<OkObjectResult>(result.Result);
-        Assert.Equal(200, okResult.StatusCode);
-        var users = Assert.IsAssignableFrom<IEnumerable<UserDto>>(okResult.Value);
-        Assert.Empty(users);
+        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
+        Assert.Equal(404, notFoundResult.StatusCode);
     }
 
     [Fact]
@@ -48,7 +46,8 @@ public class UsersControllerGetAllUsersTests : UsersControllerUnitTestBase
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         Assert.Equal(200, okResult.StatusCode);
         var returnedUsers = Assert.IsAssignableFrom<IEnumerable<UserDto>>(okResult.Value).ToList();
-        Assert.Equal(2, returnedUsers.Count);
+        Assert.Single(returnedUsers);
+        Assert.Equal(CurrentUser.Id, returnedUsers[0].Id);
     }
 
     [Fact]
@@ -67,7 +66,8 @@ public class UsersControllerGetAllUsersTests : UsersControllerUnitTestBase
         // Then
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         var returnedUsers = Assert.IsAssignableFrom<IEnumerable<UserDto>>(okResult.Value).ToList();
-        Assert.Equal(100, returnedUsers.Count);
+        Assert.Single(returnedUsers);
+        Assert.Equal(CurrentUser.Id, returnedUsers[0].Id);
     }
 }
 

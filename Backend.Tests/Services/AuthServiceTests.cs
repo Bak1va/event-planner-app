@@ -1,13 +1,25 @@
 using Backend.DTOs;
 using Backend.Services;
+using Microsoft.Extensions.Configuration;
 using Xunit;
 
 namespace Backend.Tests.Services;
 
 public class AuthServiceTests
 {
-    private static AuthService CreateService() =>
-        new AuthService(new UserService(new ValidationService()));
+    private static AuthService CreateService()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Jwt:Issuer"] = "EventPlannerApp",
+                ["Jwt:Audience"] = "EventPlannerApp",
+                ["Jwt:Key"] = "change-this-development-key-to-a-long-random-secret"
+            })
+            .Build();
+
+        return new AuthService(new UserService(new ValidationService()), configuration);
+    }
 
     [Fact]
     public void SignUp_WithValidData_CreatesUserWithProfileFields()
@@ -23,10 +35,11 @@ public class AuthServiceTests
             PhoneNumber = "+40 700 123 456"
         });
 
-        Assert.Equal("Ava", result.FirstName);
-        Assert.Equal("Stone", result.LastName);
-        Assert.Equal("+40 700 123 456", result.PhoneNumber);
-        Assert.Equal("Ava Stone", result.Name);
+        Assert.NotEmpty(result.Token);
+        Assert.Equal("Ava", result.User.FirstName);
+        Assert.Equal("Stone", result.User.LastName);
+        Assert.Equal("+40 700 123 456", result.User.PhoneNumber);
+        Assert.Equal("Ava Stone", result.User.Name);
     }
 
     [Fact]
@@ -49,8 +62,9 @@ public class AuthServiceTests
         });
 
         Assert.NotNull(result);
-        Assert.Equal("Ben", result!.FirstName);
-        Assert.Equal("Hart", result.LastName);
-        Assert.Equal("Ben Hart", result.Name);
+        Assert.NotEmpty(result!.Token);
+        Assert.Equal("Ben", result.User.FirstName);
+        Assert.Equal("Hart", result.User.LastName);
+        Assert.Equal("Ben Hart", result.User.Name);
     }
 }
