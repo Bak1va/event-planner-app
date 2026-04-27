@@ -13,8 +13,9 @@ public class UserEventServiceIntegrationTests
 {
     private AppDbContext GetInMemoryContext()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+        var options = Microsoft.EntityFrameworkCore.InMemoryDbContextOptionsExtensions.UseInMemoryDatabase(
+                new DbContextOptionsBuilder<AppDbContext>(),
+                Guid.NewGuid().ToString())
             .EnableSensitiveDataLogging()
             .Options;
 
