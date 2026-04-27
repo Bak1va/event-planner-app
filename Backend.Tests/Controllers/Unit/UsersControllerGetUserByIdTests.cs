@@ -38,16 +38,13 @@ public class UsersControllerGetUserByIdTests : UsersControllerUnitTestBase
     [Fact]
     public void GetUserById_GivenUserDoesNotExist_WhenCalled_ThenReturnsNotFound()
     {
-        // Given: User does not exist in service
-        MockUserService.Setup(s => s.GetUserById(999))
-            .Returns((UserDto?)null);
+        // Given: Attempting to access another user's data
 
         // When
         var result = Controller.GetUserById(999);
 
         // Then
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
-        Assert.Equal(404, notFoundResult.StatusCode);
+        var forbidResult = Assert.IsType<ForbidResult>(result.Result);
     }
 
     [Fact]
@@ -56,17 +53,17 @@ public class UsersControllerGetUserByIdTests : UsersControllerUnitTestBase
         // Given: Service returns user with all properties
         var user = new UserDto 
         { 
-            Id = 42, 
+            Id = CurrentUser.Id, 
             Name = "Complete User", 
             Email = "complete@example.com",
             DateAdded = new DateTime(2024, 1, 1),
             DateModified = new DateTime(2024, 1, 2)
         };
-        MockUserService.Setup(s => s.GetUserById(42))
+        MockUserService.Setup(s => s.GetUserById(CurrentUser.Id))
             .Returns(user);
 
         // When
-        var result = Controller.GetUserById(42);
+        var result = Controller.GetUserById(CurrentUser.Id);
 
         // Then
         var okResult = Assert.IsType<OkObjectResult>(result.Result);

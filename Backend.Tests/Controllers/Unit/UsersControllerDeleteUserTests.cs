@@ -30,16 +30,13 @@ public class UsersControllerDeleteUserTests : UsersControllerUnitTestBase
     [Fact]
     public void DeleteUser_GivenUserNotFound_WhenCalled_ThenReturnsNotFound()
     {
-        // Given: User does not exist
-        MockUserService.Setup(s => s.DeleteUser(999))
-            .Throws(new KeyNotFoundException("User with id 999 was not found."));
+        // Given: Attempting to delete another user's account
 
         // When
         var result = Controller.DeleteUser(999);
 
         // Then
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-        Assert.Equal(404, notFoundResult.StatusCode);
+        var forbidResult = Assert.IsType<ForbidResult>(result);
     }
 
     [Fact]

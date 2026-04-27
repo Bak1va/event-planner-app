@@ -36,24 +36,16 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
     [Fact]
     public void GetUserEndpoint_GivenCreatedUser_WhenCalled_ThenReturnsUserData()
     {
-        // Given: A user has been created
-        var createRequest = new UserCreateRequest
-        {
-            Name = "Get User Test",
-            Email = "getuser@example.com",
-            Password = "password123"
-        };
-        var createdResult = Controller.CreateUser(createRequest);
-        var createdUser = ((CreatedAtActionResult)createdResult.Result!).Value as UserDto;
+        // Given: The authenticated current user
 
         // When
-        var result = Controller.GetUserById(createdUser!.Id);
+        var result = Controller.GetUserById(CurrentUser.Id);
 
         // Then
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         Assert.Equal(200, okResult.StatusCode);
         var returnedUser = Assert.IsType<UserDto>(okResult.Value);
-        Assert.Equal(createdUser.Id, returnedUser.Id);
+        Assert.Equal(CurrentUser.Id, returnedUser.Id);
     }
 
     [Fact]
@@ -72,21 +64,14 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         Assert.Equal(200, okResult.StatusCode);
         var users = Assert.IsAssignableFrom<IEnumerable<UserDto>>(okResult.Value).ToList();
-        Assert.True(users.Count >= 2);
+        Assert.Single(users);
+        Assert.Equal(CurrentUser.Id, users[0].Id);
     }
 
     [Fact]
     public void UpdateUserEndpoint_GivenCreatedUser_WhenUpdated_ThenReturnsUpdatedData()
     {
-        // Given: A user has been created
-        var createRequest = new UserCreateRequest
-        {
-            Name = "Original Name",
-            Email = "original@example.com",
-            Password = "password123"
-        };
-        var createdResult = Controller.CreateUser(createRequest);
-        var createdUser = ((CreatedAtActionResult)createdResult.Result!).Value as UserDto;
+        // Given: The authenticated current user
 
         // When: User is updated
         var updateRequest = new UserUpdateRequest
@@ -94,7 +79,7 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
             Name = "Updated Name",
             Email = "updated@example.com"
         };
-        var result = Controller.UpdateUser(createdUser!.Id, updateRequest);
+        var result = Controller.UpdateUser(CurrentUser.Id, updateRequest);
 
         // Then
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -106,18 +91,10 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
     [Fact]
     public void DeleteUserEndpoint_GivenCreatedUser_WhenDeleted_ThenReturnsNoContent()
     {
-        // Given: A user has been created
-        var createRequest = new UserCreateRequest
-        {
-            Name = "User to Delete",
-            Email = "delete@example.com",
-            Password = "password123"
-        };
-        var createdResult = Controller.CreateUser(createRequest);
-        var createdUser = ((CreatedAtActionResult)createdResult.Result!).Value as UserDto;
+        // Given: The authenticated current user
 
         // When: User is deleted
-        var result = Controller.DeleteUser(createdUser!.Id);
+        var result = Controller.DeleteUser(CurrentUser.Id);
 
         // Then
         var noContentResult = Assert.IsType<NoContentResult>(result);
@@ -127,19 +104,11 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
     [Fact]
     public void GetDeletedUserEndpoint_GivenDeletedUser_WhenCalled_ThenReturnsNotFound()
     {
-        // Given: A user is created and then deleted
-        var createRequest = new UserCreateRequest
-        {
-            Name = "Temporary User",
-            Email = "temp@example.com",
-            Password = "password123"
-        };
-        var createdResult = Controller.CreateUser(createRequest);
-        var createdUser = ((CreatedAtActionResult)createdResult.Result!).Value as UserDto;
-        Controller.DeleteUser(createdUser!.Id);
+        // Given: The authenticated current user is deleted
+        Controller.DeleteUser(CurrentUser.Id);
 
         // When: Attempting to get the deleted user
-        var result = Controller.GetUserById(createdUser.Id);
+        var result = Controller.GetUserById(CurrentUser.Id);
 
         // Then
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
@@ -194,20 +163,19 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
     [Fact]
     public void GetNonExistentUser_GivenInvalidId_WhenCalled_ThenReturnsNotFound()
     {
-        // Given: No user with ID 999
+        // Given: No access to another user's ID
 
         // When
         var result = Controller.GetUserById(999);
 
         // Then
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
-        Assert.Equal(404, notFoundResult.StatusCode);
+        var forbidResult = Assert.IsType<ForbidResult>(result.Result);
     }
 
     [Fact]
     public void FullUserWorkflow_GivenCompleteUserLifecycle_WhenPerformed_ThenAllOperationsSucceed()
     {
-        // Given: No users exist initially
+        // Given: An authenticated current user exists initially
         var allUsersResult1 = Controller.GetAllUsers();
         var okResult1 = Assert.IsType<OkObjectResult>(allUsersResult1.Result);
         var initialUsers = Assert.IsAssignableFrom<IEnumerable<UserDto>>(okResult1.Value).ToList();
@@ -224,7 +192,7 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
         var createdUser = ((CreatedAtActionResult)createResult.Result!).Value as UserDto;
 
         // And: Get the user
-        var getResult = Controller.GetUserById(createdUser!.Id);
+        var getResult = Controller.GetUserById(CurrentUser.Id);
         var getUserDto = ((OkObjectResult)getResult.Result!).Value as UserDto;
 
         // And: Update the user
@@ -233,7 +201,7 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
             Name = "Updated Workflow User",
             Email = "updated-workflow@example.com"
         };
-        var updateResult = Controller.UpdateUser(createdUser.Id, updateRequest);
+        var updateResult = Controller.UpdateUser(CurrentUser.Id, updateRequest);
         var updatedUser = ((OkObjectResult)updateResult.Result!).Value as UserDto;
 
         // And: Get all users
@@ -242,17 +210,17 @@ public class UsersControllerIntegrationTests : UsersControllerIntegrationTestBas
         var allUsersAfterCreate = Assert.IsAssignableFrom<IEnumerable<UserDto>>(okResult2.Value).ToList();
 
         // And: Delete the user
-        Controller.DeleteUser(createdUser.Id);
+        Controller.DeleteUser(CurrentUser.Id);
 
         // And: Verify user is deleted
-        var getDeletedResult = Controller.GetUserById(createdUser.Id);
+        var getDeletedResult = Controller.GetUserById(CurrentUser.Id);
         var deletedNotFound = Assert.IsType<NotFoundObjectResult>(getDeletedResult.Result);
 
         // Then: Verify all operations succeeded
         Assert.NotNull(createdUser);
         Assert.NotNull(getUserDto);
         Assert.Equal("Updated Workflow User", updatedUser!.Name);
-        Assert.Equal(initialCount + 1, allUsersAfterCreate.Count);
+        Assert.Equal(initialCount, allUsersAfterCreate.Count);
         Assert.Equal(404, deletedNotFound.StatusCode);
     }
 }

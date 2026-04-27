@@ -19,12 +19,12 @@ public class AuthController : ControllerBase
     [ProducesResponseType(201)]
     [ProducesResponseType(400)]
     [ProducesResponseType(409)]
-    public ActionResult<UserDto> SignUp(SignUpRequest request)
+    public ActionResult<AuthResponse> SignUp(SignUpRequest request)
     {
         try
         {
-            var user = _authService.SignUp(request);
-            return Created($"/api/users/{user.Id}", user);
+            var response = _authService.SignUp(request);
+            return Created($"/api/users/{response.User.Id}", response);
         }
         catch (ArgumentException ex)
         {
@@ -40,19 +40,19 @@ public class AuthController : ControllerBase
     [ProducesResponseType(200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(401)]
-    public ActionResult<UserDto> Login(LoginRequest request)
+    public ActionResult<AuthResponse> Login(LoginRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
         {
             return BadRequest(new { message = "Email and password are required." });
         }
 
-        var user = _authService.Login(request);
-        if (user is null)
+        var response = _authService.Login(request);
+        if (response is null)
         {
             return Unauthorized(new { message = "Invalid email or password." });
         }
 
-        return Ok(user);
+        return Ok(response);
     }
 }

@@ -1,11 +1,15 @@
 ﻿using Backend.DTOs;
 using Backend.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -22,7 +26,19 @@ public class UsersController : ControllerBase
     [ProducesResponseType(200)]
     public ActionResult<IEnumerable<UserDto>> GetAllUsers()
     {
-        return Ok(_userService.GetAllUsers());
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId is null)
+        {
+            return Unauthorized();
+        }
+
+        var currentUser = _userService.GetAllUsers().FirstOrDefault(user => user.Id == currentUserId.Value);
+        if (currentUser is null)
+        {
+            return NotFound(new { message = $"User with id {currentUserId.Value} was not found." });
+        }
+
+        return Ok(new[] { currentUser });
     }
 
     /// <summary>
@@ -30,8 +46,20 @@ public class UsersController : ControllerBase
     /// </summary>
     [HttpGet("email/{email}")]
     [ProducesResponseType(200)]
+    [ProducesResponseType(403)]
     public ActionResult<bool> CheckEmailExists(string email)
     {
+        var currentUserEmail = GetCurrentUserEmail();
+        if (currentUserEmail is null)
+        {
+            return Unauthorized();
+        }
+
+        if (!email.Equals(currentUserEmail, StringComparison.OrdinalIgnoreCase))
+        {
+            return Forbid();
+        }
+
         return Ok(_userService.EmailExists(email));
     }
 
@@ -64,8 +92,20 @@ public class UsersController : ControllerBase
     [HttpGet("{id:int}")]
     [ProducesResponseType(200)]
     [ProducesResponseType(404)]
+    [ProducesResponseType(403)]
     public ActionResult<UserDto> GetUserById(int id)
     {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId is null)
+        {
+            return Unauthorized();
+        }
+
+        if (currentUserId.Value != id)
+        {
+            return Forbid();
+        }
+
         var user = _userService.GetUserById(id);
         if (user == null)
         {
@@ -78,6 +118,7 @@ public class UsersController : ControllerBase
     /// Create a new user
     /// </summary>
     [HttpPost]
+    [AllowAnonymous]
     [ProducesResponseType(201)]
     [ProducesResponseType(400)]
     [ProducesResponseType(409)]
@@ -106,8 +147,20 @@ public class UsersController : ControllerBase
     [ProducesResponseType(400)]
     [ProducesResponseType(404)]
     [ProducesResponseType(409)]
+    [ProducesResponseType(403)]
     public ActionResult<UserDto> UpdateUser(int id, UserUpdateRequest request)
     {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId is null)
+        {
+            return Unauthorized();
+        }
+
+        if (currentUserId.Value != id)
+        {
+            return Forbid();
+        }
+
         try
         {
             var user = _userService.UpdateUser(id, request);
@@ -134,8 +187,20 @@ public class UsersController : ControllerBase
     [ProducesResponseType(204)]
     [ProducesResponseType(404)]
     [ProducesResponseType(409)]
+    [ProducesResponseType(403)]
     public ActionResult DeleteUser(int id)
     {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId is null)
+        {
+            return Unauthorized();
+        }
+
+        if (currentUserId.Value != id)
+        {
+            return Forbid();
+        }
+
         try
         {
             _userService.DeleteUser(id);
@@ -149,6 +214,22 @@ public class UsersController : ControllerBase
         {
             return Conflict(new { message = ex.Message });
         }
+    }
+
+    private int? GetCurrentUserId()
+    {
+        var idValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(idValue, out var currentUserId))
+        {
+            return null;
+        }
+
+        return currentUserId;
+    }
+
+    private string? GetCurrentUserEmail()
+    {
+        return User.FindFirstValue(ClaimTypes.Email);
     }
 }
 
