@@ -120,6 +120,40 @@ export class WelcomePageComponent implements OnInit {
     this.saveError = '';
   }
 
+  protected onFormBackdropClick(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeFormModal();
+    }
+  }
+
+  protected onFormBackdropKeydown(event: KeyboardEvent): void {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'Escape') {
+      event.preventDefault();
+      this.closeFormModal();
+    }
+  }
+
+  protected onDeleteBackdropClick(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeDeleteModal();
+    }
+  }
+
+  protected onDeleteBackdropKeydown(event: KeyboardEvent): void {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'Escape') {
+      event.preventDefault();
+      this.closeDeleteModal();
+    }
+  }
+
   protected submitForm(): void {
     this.eventForm.markAllAsTouched();
     this.saveSuccess = '';

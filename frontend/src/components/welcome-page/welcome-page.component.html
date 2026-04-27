@@ -46,13 +46,17 @@
 </section>
 
 @if (isFormModalOpen) {
-  <div class="modal-backdrop" (click)="closeFormModal()">
+  <div
+    class="modal-backdrop"
+    tabindex="0"
+    (click)="onFormBackdropClick($event)"
+    (keydown)="onFormBackdropKeydown($event)"
+  >
     <section
       class="modal-panel"
       [attr.aria-label]="formMode === 'edit' ? 'Edit event dialog' : 'Create event dialog'"
       role="dialog"
       aria-modal="true"
-      (click)="$event.stopPropagation()"
     >
       <div class="modal-header">
         <div class="form-heading">
@@ -162,13 +166,17 @@
 }
 
 @if (isDeleteModalOpen && eventPendingDelete) {
-  <div class="modal-backdrop" (click)="closeDeleteModal()">
+  <div
+    class="modal-backdrop"
+    tabindex="0"
+    (click)="onDeleteBackdropClick($event)"
+    (keydown)="onDeleteBackdropKeydown($event)"
+  >
     <section
       class="modal-panel modal-panel-compact"
       aria-label="Delete event dialog"
       role="dialog"
       aria-modal="true"
-      (click)="$event.stopPropagation()"
     >
       <div class="modal-header">
         <div class="form-heading">
