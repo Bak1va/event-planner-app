@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Backend.Entities;
 
 namespace Backend.Entities;
 
@@ -27,4 +28,3 @@ public class UserEvent
     [ForeignKey(nameof(EventId))]
     public EventItem Event { get; set; } = null!;
 }
-
