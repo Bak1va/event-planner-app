@@ -118,11 +118,11 @@ public class UserEventServiceIntegrationTests
         await service.AddUserToEventAsync(dto);
 
         // Act
-        var result = await service.GetUserEventsAsync(user.Id);
+        var result = (await service.GetUserEventsAsync(user.Id)).ToList();
 
         // Assert
         Assert.Single(result);
-        Assert.Equal(eventItem.Id, result.First().EventId);
+        Assert.Equal(eventItem.Id, result[0].EventId);
     }
 
     [Fact]
