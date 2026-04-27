@@ -13,6 +13,7 @@ describe('WelcomePageComponent', () => {
       status: 'Scheduled',
       description: 'A workshop focused on modern Angular testing.',
       imageUrl: 'https://example.com/workshop.jpg',
+      eventDate: '2026-05-01T18:30:00Z',
       dateAdded: '2026-04-15T18:30:00Z',
       dateModified: '2026-04-15T18:30:00Z',
       userId: 10
@@ -23,6 +24,7 @@ describe('WelcomePageComponent', () => {
       status: 'Open',
       description: 'Collaborative coding and pizza night.',
       imageUrl: 'https://example.com/hacknight.jpg',
+      eventDate: '2026-05-02T17:00:00Z',
       dateAdded: '2026-04-18T17:00:00Z',
       dateModified: '2026-04-18T17:00:00Z',
       userId: 11
@@ -63,7 +65,7 @@ describe('WelcomePageComponent', () => {
     const fixture = TestBed.createComponent(WelcomePageComponent);
     fixture.detectChanges();
 
-    const expectedDate = new Date(mockEvents[0].dateAdded).toLocaleString(undefined, {
+    const expectedDate = new Date(mockEvents[0].eventDate).toLocaleString(undefined, {
       dateStyle: 'medium',
       timeStyle: 'short'
     });
@@ -72,5 +74,31 @@ describe('WelcomePageComponent', () => {
     const firstCardMeta = compiled.querySelector('.event-card .event-meta')?.textContent;
 
     expect(firstCardMeta).toContain(expectedDate);
+  });
+
+  it('should keep save disabled while the form is invalid', () => {
+    const fixture = TestBed.createComponent(WelcomePageComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.openCreateModal();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const submitButton = compiled.querySelector<HTMLButtonElement>('button[type="submit"]');
+
+    expect(submitButton?.disabled).toBe(true);
+  });
+
+  it('should open the create event modal from the add event button', () => {
+    const fixture = TestBed.createComponent(WelcomePageComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const openButton = compiled.querySelector<HTMLButtonElement>('.add-event-button');
+
+    openButton?.click();
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('[role="dialog"]')).not.toBeNull();
   });
 });

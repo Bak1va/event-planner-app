@@ -33,6 +33,6 @@ describe('App', () => {
     await fixture.whenStable();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h2')?.textContent).toContain('Welcome to Event Planner');
+    expect(compiled.querySelector('h2')?.textContent).toContain('Find the events worth showing up for');
   });
 });

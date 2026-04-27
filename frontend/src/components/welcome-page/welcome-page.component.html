@@ -3,17 +3,140 @@
 
   <section class="hero-section" aria-label="Welcome banner">
     <div class="hero-content">
-      <h2>Welcome to Event Planner</h2>
-      <p>Discover your next experience and plan your week in one place.</p>
+      <div>
+        <p class="eyebrow">Live experiences, all in one place</p>
+        <h2>Find the events worth showing up for</h2>
+        <p>Browse upcoming launches, workshops, and community gatherings, then add your own event when you're ready to invite the crowd.</p>
+      </div>
     </div>
   </section>
 
   <section class="events-section" aria-label="List of events">
-    <h3>Upcoming events</h3>
-    <div class="events-list">
-      @for (event of events; track event.id) {
-        <app-event-card [event]="event"></app-event-card>
-      }
+    <div class="events-header">
+      <div>
+        <h3>What&apos;s coming up</h3>
+        <p>Explore the next wave of events and keep your audience in the loop with fresh listings.</p>
+      </div>
+      <button class="add-event-button" type="button" (click)="openCreateModal()">Add event</button>
     </div>
+
+    @if (saveSuccess) {
+      <p class="events-message events-message-success">{{ saveSuccess }}</p>
+    }
+
+    @if (loadError) {
+      <p class="events-message events-message-error">{{ loadError }}</p>
+    } @else if (isLoading) {
+      <p class="events-message">Loading upcoming events...</p>
+    } @else if (!events.length) {
+      <p class="events-message">No events have been published yet. Add the first one to get things started.</p>
+    } @else {
+      <div class="events-list">
+        @for (event of events; track event.id) {
+          <app-event-card [event]="event"></app-event-card>
+        }
+      </div>
+    }
   </section>
 </section>
+
+@if (isCreateModalOpen) {
+  <div class="modal-backdrop" (click)="closeCreateModal()">
+    <section
+      class="modal-panel"
+      aria-label="Create event dialog"
+      role="dialog"
+      aria-modal="true"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="modal-header">
+        <div class="form-heading">
+          <h3>Create a new event</h3>
+          <p>Share the essentials guests care about most so your listing is ready to go the moment you save it.</p>
+        </div>
+        <button class="close-button" type="button" (click)="closeCreateModal()" aria-label="Close create event dialog">
+          ×
+        </button>
+      </div>
+
+      <form class="event-form" [formGroup]="eventForm" (ngSubmit)="submitForm()" novalidate>
+        <label class="field">
+          <span>Event name</span>
+          <input type="text" formControlName="name" placeholder="Summer Rooftop Networking Night" maxlength="150" />
+          <small class="field-meta">{{ currentLength('name') }}/{{ maxNameLength }}</small>
+          @if (shouldShowError('name', 'required')) {
+            <small class="field-error">Event name is required.</small>
+          }
+          @if (shouldShowError('name', 'maxlength')) {
+            <small class="field-error">Event name must stay under {{ maxNameLength }} characters.</small>
+          }
+        </label>
+
+        <div class="field-row">
+          <label class="field">
+            <span>Status</span>
+            <select formControlName="status">
+              @for (status of statusOptions; track status) {
+                <option [value]="status">{{ status }}</option>
+              }
+            </select>
+            @if (shouldShowError('status', 'required')) {
+              <small class="field-error">Status is required.</small>
+            }
+            @if (shouldShowError('status', 'maxlength')) {
+              <small class="field-error">Status must stay under {{ maxStatusLength }} characters.</small>
+            }
+          </label>
+
+          <label class="field">
+            <span>Event date</span>
+            <input type="datetime-local" formControlName="eventDate" />
+            @if (shouldShowError('eventDate', 'required')) {
+              <small class="field-error">Event date is required.</small>
+            }
+            @if (shouldShowError('eventDate', 'futureDate')) {
+              <small class="field-error">Event date must be in the future.</small>
+            }
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Description</span>
+          <textarea
+            formControlName="description"
+            rows="4"
+            placeholder="Tell guests what to expect, who it is for, and why they should be there."
+            maxlength="1000"
+          ></textarea>
+          <small class="field-meta">{{ currentLength('description') }}/{{ maxDescriptionLength }}</small>
+          @if (shouldShowError('description', 'maxlength')) {
+            <small class="field-error">Description must stay under {{ maxDescriptionLength }} characters.</small>
+          }
+        </label>
+
+        <label class="field">
+          <span>Image URL</span>
+          <input type="url" formControlName="imageUrl" placeholder="https://images.example.com/rooftop-networking-night.jpg" maxlength="2048" />
+          @if (shouldShowError('imageUrl', 'maxlength')) {
+            <small class="field-error">Image URL must stay under {{ maxImageUrlLength }} characters.</small>
+          }
+        </label>
+
+        @if (saveError) {
+          <p class="form-message form-message-error">{{ saveError }}</p>
+        }
+
+        @if (saveSuccess) {
+          <p class="form-message form-message-success">{{ saveSuccess }}</p>
+        }
+
+        <div class="modal-actions">
+          <button class="secondary-button" type="button" (click)="closeCreateModal()">Cancel</button>
+          <button class="submit-button" type="submit" [disabled]="eventForm.invalid || isSaving">
+            {{ isSaving ? 'Saving...' : 'Save event' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}

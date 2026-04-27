@@ -4,6 +4,7 @@ export interface EventDto {
   status: string;
   description: string;
   imageUrl: string;
+  eventDate: string;
   dateAdded: string;
   dateModified: string;
   userId: number;

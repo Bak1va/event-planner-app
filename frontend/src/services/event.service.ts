@@ -9,7 +9,7 @@ import { EventRequest } from '../DTOs/event-request.dto';
 })
 export class EventService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:5070/api/events';
+  private readonly baseUrl = '/api/events';
 
   getAllEvents(): Observable<EventDto[]> {
     return this.http.get<EventDto[]>(this.baseUrl);

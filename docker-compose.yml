@@ -8,10 +8,8 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: event_planner_db
-    ports:
-      - "5432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - event_planner_db_data:/var/lib/postgresql/data
     networks:
       - event-network
 
@@ -50,4 +48,4 @@ networks:
     driver: bridge
 
 volumes:
-  db_data:
+  event_planner_db_data:
