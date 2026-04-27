@@ -76,7 +76,7 @@ export class WelcomePageComponent implements OnInit {
     this.loadEvents();
   }
 
-  protected openCreateModal(): void {
+  public openCreateModal(): void {
     this.saveSuccess = '';
     this.saveError = '';
     this.formMode = 'create';
@@ -85,7 +85,7 @@ export class WelcomePageComponent implements OnInit {
     this.isFormModalOpen = true;
   }
 
-  protected openEditModal(event: EventCardData): void {
+  public openEditModal(event: EventCardData): void {
     this.saveSuccess = '';
     this.saveError = '';
     this.formMode = 'edit';
@@ -108,7 +108,7 @@ export class WelcomePageComponent implements OnInit {
     this.resetForm();
   }
 
-  protected openDeleteModal(event: EventCardData): void {
+  public openDeleteModal(event: EventCardData): void {
     this.saveError = '';
     this.eventPendingDelete = event;
     this.isDeleteModalOpen = true;
@@ -154,7 +154,7 @@ export class WelcomePageComponent implements OnInit {
     }
   }
 
-  protected submitForm(): void {
+  public submitForm(): void {
     this.eventForm.markAllAsTouched();
     this.saveSuccess = '';
     this.saveError = '';
@@ -207,7 +207,7 @@ export class WelcomePageComponent implements OnInit {
       });
   }
 
-  protected confirmDelete(): void {
+  public confirmDelete(): void {
     const eventToDelete = this.eventPendingDelete;
     if (!eventToDelete || this.isDeleting) {
       return;
