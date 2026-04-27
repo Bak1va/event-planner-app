@@ -5,4 +5,8 @@ export interface EventCardData {
   location: string;
   description: string;
   imageUrl: string;
+  sourceImageUrl: string;
+  status: string;
+  eventDate: string;
+  userId: number;
 }

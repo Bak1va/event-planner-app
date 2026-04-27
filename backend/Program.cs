@@ -35,30 +35,31 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins(
+                "http://localhost",
+                "http://127.0.0.1",
+                "http://localhost:80",
+                "http://127.0.0.1:80",
+                "http://localhost:4200",
+                "http://127.0.0.1:4200")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
 });
 
 // Register services with dependency injection
-// Note: We register them without circular dependencies and wire them up after
 builder.Services.AddSingleton<IValidationService, ValidationService>();
-builder.Services.AddSingleton<IUserService, UserService>();
-builder.Services.AddSingleton<IAuthService, AuthService>();
-builder.Services.AddSingleton<IEventService, EventService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IEventService, EventService>();
 
 // Build the app
 var app = builder.Build();
 
-// Wire up the services to resolve circular dependency
-var userService = app.Services.GetRequiredService<IUserService>() as UserService;
-var eventService = app.Services.GetRequiredService<IEventService>() as EventService;
-
-if (userService != null && eventService != null)
+await using (var scope = app.Services.CreateAsyncScope())
 {
-    userService.SetEventService(eventService);
-    eventService.SetUserService(userService);
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await AppDbInitializer.InitializeAsync(dbContext);
 }
 
 // Configure the HTTP request pipeline

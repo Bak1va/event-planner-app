@@ -10,7 +10,11 @@ describe('EventCardComponent', () => {
     date: 'Apr 20, 2026, 6:30 PM',
     location: 'Status: Confirmed',
     description: 'An evening meetup for local professionals.',
-    imageUrl: 'https://example.com/event.jpg'
+    imageUrl: 'https://example.com/event.jpg',
+    sourceImageUrl: 'https://example.com/event.jpg',
+    status: 'Confirmed',
+    eventDate: '2026-04-20T18:30:00Z',
+    userId: 1
   };
 
   beforeEach(async () => {

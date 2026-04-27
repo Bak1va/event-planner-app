@@ -1,6 +1,8 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
+using Backend.Data;
 using Backend.DTOs;
 using Backend.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Services;
 
@@ -16,16 +18,22 @@ public interface IEventService
 
 public class EventService : IEventService
 {
-    private readonly ConcurrentDictionary<int, EventItem> _eventsStore;
+    private readonly AppDbContext? _dbContext;
+    private readonly ConcurrentDictionary<int, EventItem>? _eventsStore;
     private readonly IValidationService _validationService;
     private IUserService? _userService;
-    private int _nextEventId = 1;
+    private int _nextEventId;
 
     public EventService(IValidationService validationService)
     {
         _eventsStore = new ConcurrentDictionary<int, EventItem>();
         _validationService = validationService;
-        _userService = null;
+    }
+
+    public EventService(AppDbContext dbContext, IValidationService validationService)
+    {
+        _dbContext = dbContext;
+        _validationService = validationService;
     }
 
     public void SetUserService(IUserService userService)
@@ -35,95 +43,180 @@ public class EventService : IEventService
 
     public IEnumerable<EventDto> GetAllEvents()
     {
-        return _eventsStore.Values
-            .OrderBy(e => e.Id)
+        if (_dbContext is not null)
+        {
+            return _dbContext.Events
+                .AsNoTracking()
+                .OrderBy(e => e.EventDate)
+                .ThenBy(e => e.Id)
+                .Select(eventItem => new EventDto
+                {
+                    Id = eventItem.Id,
+                    Name = eventItem.Name,
+                    Status = eventItem.Status,
+                    Description = eventItem.Description,
+                    ImageUrl = eventItem.ImageUrl,
+                    EventDate = eventItem.EventDate,
+                    DateAdded = eventItem.DateAdded,
+                    DateModified = eventItem.DateModified,
+                    UserId = eventItem.UserId
+                })
+                .ToList();
+        }
+
+        return _eventsStore!.Values
+            .OrderBy(e => e.EventDate)
+            .ThenBy(e => e.Id)
             .Select(MapToDto);
     }
 
     public EventDto? GetEventById(int id)
     {
-        if (_eventsStore.TryGetValue(id, out var eventItem))
+        if (_dbContext is not null)
         {
-            return MapToDto(eventItem);
+            var eventItem = _dbContext.Events.AsNoTracking().FirstOrDefault(e => e.Id == id);
+            return eventItem is null ? null : MapToDto(eventItem);
         }
+
+        if (_eventsStore!.TryGetValue(id, out var storedEvent))
+        {
+            return MapToDto(storedEvent);
+        }
+
         return null;
     }
 
     public IEnumerable<EventDto> GetEventsByUserId(int userId)
     {
-        return _eventsStore.Values
+        if (_dbContext is not null)
+        {
+            return _dbContext.Events
+                .AsNoTracking()
+                .Where(e => e.UserId == userId)
+                .OrderBy(e => e.EventDate)
+                .ThenBy(e => e.Id)
+                .Select(eventItem => new EventDto
+                {
+                    Id = eventItem.Id,
+                    Name = eventItem.Name,
+                    Status = eventItem.Status,
+                    Description = eventItem.Description,
+                    ImageUrl = eventItem.ImageUrl,
+                    EventDate = eventItem.EventDate,
+                    DateAdded = eventItem.DateAdded,
+                    DateModified = eventItem.DateModified,
+                    UserId = eventItem.UserId
+                })
+                .ToList();
+        }
+
+        return _eventsStore!.Values
             .Where(e => e.UserId == userId)
+            .OrderBy(e => e.EventDate)
+            .ThenBy(e => e.Id)
             .Select(MapToDto);
     }
 
     public EventDto CreateEvent(EventCreateRequest request)
     {
-        var validationError = _validationService.ValidateEventRequest(request.Name, request.Status, request.Description, request.ImageUrl, request.EventDate);
-        if (validationError is not null)
-        {
-            throw new ArgumentException(validationError);
-        }
+        ValidateRequest(request.Name, request.Status, request.Description, request.ImageUrl, request.EventDate, request.UserId);
 
-        if (_userService != null && _userService.GetUserById(request.UserId) == null)
+        var now = DateTime.UtcNow;
+
+        if (_dbContext is not null)
         {
-            throw new ArgumentException("Invalid userId. User does not exist.");
+            var eventItem = new EventItem
+            {
+                Name = request.Name.Trim(),
+                Status = request.Status.Trim(),
+                Description = request.Description?.Trim() ?? string.Empty,
+                ImageUrl = request.ImageUrl?.Trim() ?? string.Empty,
+                EventDate = request.EventDate.ToUniversalTime(),
+                DateAdded = now,
+                DateModified = now,
+                UserId = request.UserId
+            };
+
+            _dbContext.Events.Add(eventItem);
+            _dbContext.SaveChanges();
+
+            return MapToDto(eventItem);
         }
 
         var id = Interlocked.Increment(ref _nextEventId);
-        var now = DateTime.UtcNow;
-
-        var eventItem = new EventItem(
-            id,
-            request.Name.Trim(),
-            request.Status.Trim(),
-            request.Description?.Trim() ?? string.Empty,
-            request.ImageUrl?.Trim() ?? string.Empty,
-            request.EventDate.ToUniversalTime(),
-            now,
-            now,
-            request.UserId
-        );
-
-        _eventsStore[id] = eventItem;
-        return MapToDto(eventItem);
-    }
-
-    public EventDto UpdateEvent(int id, EventUpdateRequest request)
-    {
-        if (!_eventsStore.TryGetValue(id, out var existingEvent))
+        var inMemoryEvent = new EventItem
         {
-            throw new KeyNotFoundException($"Event with id {id} was not found.");
-        }
-
-        var validationError = _validationService.ValidateEventRequest(request.Name, request.Status, request.Description, request.ImageUrl, request.EventDate);
-        if (validationError is not null)
-        {
-            throw new ArgumentException(validationError);
-        }
-
-        if (_userService != null && _userService.GetUserById(request.UserId) == null)
-        {
-            throw new ArgumentException("Invalid userId. User does not exist.");
-        }
-
-        var updated = existingEvent with
-        {
+            Id = id,
             Name = request.Name.Trim(),
             Status = request.Status.Trim(),
             Description = request.Description?.Trim() ?? string.Empty,
             ImageUrl = request.ImageUrl?.Trim() ?? string.Empty,
             EventDate = request.EventDate.ToUniversalTime(),
-            UserId = request.UserId,
-            DateModified = DateTime.UtcNow
+            DateAdded = now,
+            DateModified = now,
+            UserId = request.UserId
         };
 
-        _eventsStore[id] = updated;
-        return MapToDto(updated);
+        _eventsStore![id] = inMemoryEvent;
+        return MapToDto(inMemoryEvent);
+    }
+
+    public EventDto UpdateEvent(int id, EventUpdateRequest request)
+    {
+        ValidateRequest(request.Name, request.Status, request.Description, request.ImageUrl, request.EventDate, request.UserId);
+
+        if (_dbContext is not null)
+        {
+            var existingEvent = _dbContext.Events.FirstOrDefault(e => e.Id == id);
+            if (existingEvent is null)
+            {
+                throw new KeyNotFoundException($"Event with id {id} was not found.");
+            }
+
+            existingEvent.Name = request.Name.Trim();
+            existingEvent.Status = request.Status.Trim();
+            existingEvent.Description = request.Description?.Trim() ?? string.Empty;
+            existingEvent.ImageUrl = request.ImageUrl?.Trim() ?? string.Empty;
+            existingEvent.EventDate = request.EventDate.ToUniversalTime();
+            existingEvent.UserId = request.UserId;
+            existingEvent.DateModified = DateTime.UtcNow;
+
+            _dbContext.SaveChanges();
+            return MapToDto(existingEvent);
+        }
+
+        if (!_eventsStore!.TryGetValue(id, out var storedEvent))
+        {
+            throw new KeyNotFoundException($"Event with id {id} was not found.");
+        }
+
+        storedEvent.Name = request.Name.Trim();
+        storedEvent.Status = request.Status.Trim();
+        storedEvent.Description = request.Description?.Trim() ?? string.Empty;
+        storedEvent.ImageUrl = request.ImageUrl?.Trim() ?? string.Empty;
+        storedEvent.EventDate = request.EventDate.ToUniversalTime();
+        storedEvent.UserId = request.UserId;
+        storedEvent.DateModified = DateTime.UtcNow;
+
+        return MapToDto(storedEvent);
     }
 
     public bool DeleteEvent(int id)
     {
-        if (!_eventsStore.ContainsKey(id))
+        if (_dbContext is not null)
+        {
+            var existingEvent = _dbContext.Events.FirstOrDefault(e => e.Id == id);
+            if (existingEvent is null)
+            {
+                throw new KeyNotFoundException($"Event with id {id} was not found.");
+            }
+
+            _dbContext.Events.Remove(existingEvent);
+            _dbContext.SaveChanges();
+            return true;
+        }
+
+        if (!_eventsStore!.ContainsKey(id))
         {
             throw new KeyNotFoundException($"Event with id {id} was not found.");
         }
@@ -131,7 +224,32 @@ public class EventService : IEventService
         return _eventsStore.TryRemove(id, out _);
     }
 
-    private EventDto MapToDto(EventItem eventItem)
+    private void ValidateRequest(string? name, string? status, string? description, string? imageUrl, DateTime eventDate, int userId)
+    {
+        var validationError = _validationService.ValidateEventRequest(name, status, description, imageUrl, eventDate);
+        if (validationError is not null)
+        {
+            throw new ArgumentException(validationError);
+        }
+
+        if (_dbContext is not null)
+        {
+            var userExists = _dbContext.Users.Any(user => user.Id == userId);
+            if (!userExists)
+            {
+                throw new ArgumentException("Invalid userId. User does not exist.");
+            }
+
+            return;
+        }
+
+        if (_userService != null && _userService.GetUserById(userId) == null)
+        {
+            throw new ArgumentException("Invalid userId. User does not exist.");
+        }
+    }
+
+    private static EventDto MapToDto(EventItem eventItem)
     {
         return new EventDto
         {
@@ -147,4 +265,3 @@ public class EventService : IEventService
         };
     }
 }
-
