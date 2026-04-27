@@ -27,6 +27,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddSingleton<IValidationService, ValidationService>();
 builder.Services.AddSingleton<IUserService, UserService>();
 builder.Services.AddSingleton<IEventService, EventService>();
+builder.Services.AddScoped<UserEventService>();
 
 // Build the app
 var app = builder.Build();
