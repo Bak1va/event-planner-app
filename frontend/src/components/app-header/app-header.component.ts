@@ -39,4 +39,11 @@ export class AppHeaderComponent {
   protected onMenuContainerClick(event: MouseEvent): void {
     event.stopPropagation();
   }
+
+  protected onMenuContainerKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
 }
