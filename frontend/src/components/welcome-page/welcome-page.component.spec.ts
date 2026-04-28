@@ -8,6 +8,7 @@ import { WelcomePageComponent } from './welcome-page.component';
 import { AuthService } from '../../services/auth.service';
 import { EventService } from '../../services/event.service';
 import { EventDto } from '../../DTOs/event.dto';
+import { AuthUser } from '../../DTOs/auth.dto';
 
 describe('WelcomePageComponent', () => {
   let eventServiceMock: {
@@ -55,7 +56,7 @@ describe('WelcomePageComponent', () => {
       deleteEvent: vi.fn().mockReturnValue(of(void 0))
     };
     authServiceMock = {
-      currentUser: signal<any>({
+      currentUser: signal<AuthUser>({
         id: 1,
         name: 'Event Team',
         firstName: 'Event',
