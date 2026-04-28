@@ -4,5 +4,5 @@ export interface EventRequest {
   eventDate: string;
   description?: string;
   imageUrl?: string;
-  userId: number;
+  userId?: number;
 }

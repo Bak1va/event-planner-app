@@ -1,0 +1,164 @@
+<section class="auth-page">
+  <app-header actionLabel="Back to events" actionLink="/"></app-header>
+
+  <section class="auth-shell" aria-label="Authentication">
+    <aside class="auth-aside">
+      <p class="eyebrow">Member access</p>
+      <h2>Jump back into planning or create your account in minutes</h2>
+      <p class="auth-copy">
+        Sign in to manage event listings or create a fresh account to start publishing your own experiences.
+      </p>
+
+      <div class="benefit-list" aria-label="Benefits of an account">
+        <article class="benefit-card">
+          <strong>Save your event lineup</strong>
+          <span>Keep your launches, workshops, and community nights under one profile.</span>
+        </article>
+        <article class="benefit-card">
+          <strong>Update details fast</strong>
+          <span>Refresh schedules, descriptions, and status changes whenever plans shift.</span>
+        </article>
+        <article class="benefit-card">
+          <strong>Stay ready to publish</strong>
+          <span>Move from idea to published event with a workspace designed for fast launches and clean updates.</span>
+        </article>
+      </div>
+    </aside>
+
+    <section class="auth-panel">
+      <div class="auth-tabs" role="tablist" aria-label="Authentication options">
+        <button
+          class="auth-tab"
+          type="button"
+          role="tab"
+          [attr.aria-selected]="activeTab === 'login'"
+          [class.auth-tab-active]="activeTab === 'login'"
+          (click)="setActiveTab('login')"
+        >
+          Login
+        </button>
+        <button
+          class="auth-tab"
+          type="button"
+          role="tab"
+          [attr.aria-selected]="activeTab === 'signup'"
+          [class.auth-tab-active]="activeTab === 'signup'"
+          (click)="setActiveTab('signup')"
+        >
+          Sign up
+        </button>
+      </div>
+
+      @if (activeTab === 'login') {
+        <div class="form-shell" role="tabpanel" aria-label="Login form">
+          <div class="form-heading">
+            <h3>Welcome back</h3>
+            <p>Use your email and password to open your private event workspace.</p>
+          </div>
+
+          <form class="auth-form" [formGroup]="loginForm" (ngSubmit)="submitLogin()" novalidate>
+            <label class="field">
+              <span>Email</span>
+              <input type="email" formControlName="email" placeholder="you@example.com" />
+              @if (shouldShowLoginError('email', 'required')) {
+                <small class="field-error">Email is required.</small>
+              }
+              @if (shouldShowLoginError('email', 'email')) {
+                <small class="field-error">Enter a valid email address.</small>
+              }
+            </label>
+
+            <label class="field">
+              <span>Password</span>
+              <input type="password" formControlName="password" placeholder="Enter your password" />
+              @if (shouldShowLoginError('password', 'required')) {
+                <small class="field-error">Password is required.</small>
+              }
+              @if (shouldShowLoginError('password', 'minlength')) {
+                <small class="field-error">Password must be at least 8 characters long.</small>
+              }
+            </label>
+
+            @if (loginError) {
+              <p class="form-message form-message-error">{{ loginError }}</p>
+            }
+
+            <button class="submit-button" type="submit" [disabled]="loginForm.invalid || isLoggingIn">
+              {{ isLoggingIn ? 'Signing in...' : 'Login' }}
+            </button>
+          </form>
+        </div>
+      } @else {
+        <div class="form-shell" role="tabpanel" aria-label="Sign up form">
+          <div class="form-heading">
+            <h3>Create your account</h3>
+            <p>Set up your profile so you can publish and manage your own events from one place.</p>
+          </div>
+
+          <form class="auth-form" [formGroup]="signUpForm" (ngSubmit)="submitSignUp()" novalidate>
+            <div class="field-row">
+              <label class="field">
+                <span>First name</span>
+                <input type="text" formControlName="firstName" placeholder="Karina" />
+                @if (shouldShowSignUpError('firstName', 'required')) {
+                  <small class="field-error">First name is required.</small>
+                }
+              </label>
+
+              <label class="field">
+                <span>Last name</span>
+                <input type="text" formControlName="lastName" placeholder="Popescu" />
+                @if (shouldShowSignUpError('lastName', 'required')) {
+                  <small class="field-error">Last name is required.</small>
+                }
+              </label>
+            </div>
+
+            <label class="field">
+              <span>Email</span>
+              <input type="email" formControlName="email" placeholder="you@example.com" />
+              @if (shouldShowSignUpError('email', 'required')) {
+                <small class="field-error">Email is required.</small>
+              }
+              @if (shouldShowSignUpError('email', 'email')) {
+                <small class="field-error">Enter a valid email address.</small>
+              }
+            </label>
+
+            <div class="field-row">
+              <label class="field">
+                <span>Password</span>
+                <input type="password" formControlName="password" placeholder="Create a password" />
+                @if (shouldShowSignUpError('password', 'required')) {
+                  <small class="field-error">Password is required.</small>
+                }
+                @if (shouldShowSignUpError('password', 'minlength')) {
+                  <small class="field-error">Password must be at least 8 characters long.</small>
+                }
+              </label>
+
+              <label class="field">
+                <span>Phone number</span>
+                <input type="tel" formControlName="phoneNumber" placeholder="+40 712 345 678" />
+                @if (shouldShowSignUpError('phoneNumber', 'required')) {
+                  <small class="field-error">Phone number is required.</small>
+                }
+                @if (shouldShowSignUpError('phoneNumber', 'pattern')) {
+                  <small class="field-error">Use 7 to 20 digits and common phone symbols only.</small>
+                }
+              </label>
+            </div>
+
+            @if (signUpError) {
+              <p class="form-message form-message-error">{{ signUpError }}</p>
+            }
+
+            <button class="submit-button" type="submit" [disabled]="signUpForm.invalid || isSigningUp">
+              {{ isSigningUp ? 'Creating account...' : 'Sign up' }}
+            </button>
+          </form>
+        </div>
+      }
+    </section>
+  </section>
+</section>

@@ -1,3 +1,31 @@
 <header class="app-header" aria-label="Application header">
   <h1>Event Planner</h1>
+
+  <div class="header-actions">
+    @if (showLogout()) {
+      <div class="menu-shell" (click)="onMenuContainerClick($event)">
+        <button
+          class="menu-toggle"
+          type="button"
+          aria-label="Open account menu"
+          aria-haspopup="menu"
+          [attr.aria-expanded]="isMenuOpen()"
+          (click)="toggleMenu()"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        @if (isMenuOpen()) {
+          <div class="menu-panel" role="menu" aria-label="Account menu">
+            <button class="menu-item" type="button" role="menuitem" (click)="openProfile()">Profile</button>
+            <button class="menu-item menu-item-secondary" type="button" role="menuitem" (click)="logout()">Logout</button>
+          </div>
+        }
+      </div>
+    } @else if (actionLabel() && actionLink()) {
+      <a class="header-action" [routerLink]="actionLink()">{{ actionLabel() }}</a>
+    }
+  </div>
 </header>

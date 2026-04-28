@@ -1,48 +1,92 @@
 <section class="welcome-page">
-  <app-header></app-header>
+  <app-header
+    [actionLabel]="isAuthenticated() ? null : 'Login / Sign up'"
+    [actionLink]="isAuthenticated() ? null : '/auth'"
+    [userName]="isAuthenticated() ? currentUser()?.firstName || currentUser()?.name || null : null"
+    [showLogout]="isAuthenticated()"
+    (profileRequested)="openProfileModal()"
+    (logoutRequested)="logout()"
+  ></app-header>
 
   <section class="hero-section" aria-label="Welcome banner">
-    <div class="hero-content">
+    <div class="hero-content" [class.hero-content-single]="isAuthenticated()">
       <div>
-        <p class="eyebrow">Live experiences, all in one place</p>
-        <h2>Find the events worth showing up for</h2>
-        <p>Browse upcoming launches, workshops, and community gatherings, then add your own event when you're ready to invite the crowd.</p>
-      </div>
-    </div>
-  </section>
+        @if (isAuthenticated()) {
+          <p class="eyebrow">Your workspace</p>
+          <h2>Welcome back, {{ currentUser()?.firstName || currentUser()?.name }}</h2>
+          <p>
+            Manage your private event lineup, refresh guest-facing details, and keep every upcoming experience on schedule.
+          </p>
+        } @else {
+          <p class="eyebrow">Live experiences, all in one place</p>
+          <h2>Plan, publish, and manage events from one secure workspace</h2>
+          <p>
+            Sign in to unlock your private dashboard for launches, workshops, and community gatherings. Guests only see the platform preview until they create an account.
+          </p>
 
-  <section class="events-section" aria-label="List of events">
-    <div class="events-header">
-      <div>
-        <h3>What&apos;s coming up</h3>
-        <p>Explore the next wave of events and keep your audience in the loop with fresh listings.</p>
-      </div>
-      <button class="add-event-button" type="button" (click)="openCreateModal()">Add event</button>
-    </div>
-
-    @if (saveSuccess) {
-      <p class="events-message events-message-success">{{ saveSuccess }}</p>
-    }
-
-    @if (loadError) {
-      <p class="events-message events-message-error">{{ loadError }}</p>
-    } @else if (isLoading) {
-      <p class="events-message">Loading upcoming events...</p>
-    } @else if (!events.length) {
-      <p class="events-message">No events have been published yet. Add the first one to get things started.</p>
-    } @else {
-      <div class="events-list">
-        @for (event of events; track event.id) {
-          <app-event-card
-            [event]="event"
-            [isDeleting]="isDeleting && eventPendingDelete?.id === event.id"
-            (edit)="openEditModal(event)"
-            (deleteRequested)="openDeleteModal(event)"
-          ></app-event-card>
+          <div class="hero-actions">
+            <a class="hero-primary" routerLink="/auth">Get started</a>
+            <a class="hero-secondary" routerLink="/auth">I already have an account</a>
+          </div>
         }
       </div>
-    }
+    </div>
   </section>
+
+  @if (isAuthenticated()) {
+    <section class="events-section" aria-label="List of events">
+      <div class="events-header">
+        <div>
+          <h3>What&apos;s coming up</h3>
+          <p>Your dashboard only shows events tied to your account.</p>
+        </div>
+        <button class="add-event-button" type="button" (click)="openCreateModal()">Add event</button>
+      </div>
+
+      @if (saveSuccess) {
+        <p class="events-message events-message-success">{{ saveSuccess }}</p>
+      }
+
+      @if (loadError) {
+        <p class="events-message events-message-error">{{ loadError }}</p>
+      } @else if (isLoading) {
+        <p class="events-message">Loading your event lineup...</p>
+      } @else if (!events.length) {
+        <p class="events-message">Your workspace is ready. Add your first event to start building the lineup.</p>
+      } @else {
+        <div class="events-list">
+          @for (event of events; track event.id) {
+            <app-event-card
+              [event]="event"
+              [isDeleting]="isDeleting && eventPendingDelete?.id === event.id"
+              (edit)="openEditModal(event)"
+              (deleteRequested)="openDeleteModal(event)"
+            ></app-event-card>
+          }
+        </div>
+      }
+    </section>
+  } @else {
+    <section class="guest-section" aria-label="Platform preview">
+      <div class="guest-card">
+        <p class="eyebrow">Private by default</p>
+        <h3>Each account gets its own event dashboard</h3>
+        <p>Create an account to see, edit, and publish only the events that belong to you.</p>
+      </div>
+
+      <div class="guest-card">
+        <p class="eyebrow">Built for operators</p>
+        <h3>From quick edits to launch day readiness</h3>
+        <p>Update status, timing, imagery, and descriptions from a single workspace without exposing private data to guests.</p>
+      </div>
+
+      <div class="guest-card">
+        <p class="eyebrow">Ready when you are</p>
+        <h3>Sign in to unlock the full platform</h3>
+        <p>Registration takes a minute, and your account opens directly into your personal event lineup.</p>
+      </div>
+    </section>
+  }
 </section>
 
 @if (isFormModalOpen) {
@@ -161,6 +205,51 @@
           </button>
         </div>
       </form>
+    </section>
+  </div>
+}
+
+@if (isProfileModalOpen && currentUser()) {
+  <div
+    class="modal-backdrop"
+    tabindex="0"
+    (click)="onProfileBackdropClick($event)"
+    (keydown)="onProfileBackdropKeydown($event)"
+  >
+    <section
+      class="modal-panel modal-panel-compact"
+      aria-label="Profile dialog"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="modal-header">
+        <div class="form-heading">
+          <h3>Profile</h3>
+          <p>Your account details are available here whenever you need them.</p>
+        </div>
+        <button class="close-button" type="button" (click)="closeProfileModal()" aria-label="Close profile dialog">
+          ×
+        </button>
+      </div>
+
+      <div class="profile-details">
+        <div class="profile-row">
+          <span>Name</span>
+          <strong>{{ currentUser()?.firstName }} {{ currentUser()?.lastName }}</strong>
+        </div>
+        <div class="profile-row">
+          <span>Email</span>
+          <strong>{{ currentUser()?.email }}</strong>
+        </div>
+        <div class="profile-row">
+          <span>Phone</span>
+          <strong>{{ currentUser()?.phoneNumber || 'Not provided' }}</strong>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="secondary-button" type="button" (click)="closeProfileModal()">Close</button>
+      </div>
     </section>
   </div>
 }

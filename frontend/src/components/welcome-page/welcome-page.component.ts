@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, effect, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
@@ -8,10 +8,12 @@ import {
   ValidationErrors,
   Validators
 } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { EventDto } from '../../DTOs/event.dto';
 import { EventCardData } from '../../models/event-card-data.model';
+import { AuthService } from '../../services/auth.service';
 import { EventService } from '../../services/event.service';
 import { AppHeaderComponent } from '../app-header/app-header.component';
 import { EventCardComponent } from '../event-card/event-card.component';
@@ -19,15 +21,17 @@ import { EventCardComponent } from '../event-card/event-card.component';
 @Component({
   selector: 'app-welcome-page',
   standalone: true,
-  imports: [AppHeaderComponent, EventCardComponent, ReactiveFormsModule],
+  imports: [AppHeaderComponent, EventCardComponent, ReactiveFormsModule, RouterLink],
   templateUrl: './welcome-page.component.html',
   styleUrl: './welcome-page.component.css'
 })
-export class WelcomePageComponent implements OnInit {
+export class WelcomePageComponent {
+  private readonly authService = inject(AuthService);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
   private readonly eventService = inject(EventService);
   private readonly formBuilder = inject(NonNullableFormBuilder);
+  private readonly router = inject(Router);
   private readonly fallbackImages = [
     'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&w=900&q=80',
     'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=900&q=80',
@@ -38,7 +42,6 @@ export class WelcomePageComponent implements OnInit {
   protected readonly maxStatusLength = 100;
   protected readonly maxDescriptionLength = 1000;
   protected readonly maxImageUrlLength = 2048;
-  protected readonly defaultUserId = 1;
   protected readonly statusOptions = [
     'Scheduled',
     'Open',
@@ -46,6 +49,8 @@ export class WelcomePageComponent implements OnInit {
     'Registration Required',
     'Cancelled'
   ];
+  protected readonly currentUser = this.authService.currentUser;
+  protected readonly isAuthenticated = this.authService.isAuthenticated;
 
   protected readonly eventForm = this.formBuilder.group({
     name: ['', [Validators.required, Validators.maxLength(this.maxNameLength)]],
@@ -61,6 +66,7 @@ export class WelcomePageComponent implements OnInit {
   protected isDeleting = false;
   protected isFormModalOpen = false;
   protected isDeleteModalOpen = false;
+  protected isProfileModalOpen = false;
   protected formMode: 'create' | 'edit' = 'create';
   protected selectedEventId: number | null = null;
   protected eventPendingDelete: EventCardData | null = null;
@@ -70,10 +76,26 @@ export class WelcomePageComponent implements OnInit {
 
   constructor() {
     this.eventForm.controls.eventDate.setValue(this.buildDefaultEventDateValue());
-  }
 
-  ngOnInit(): void {
-    this.loadEvents();
+    effect(() => {
+      if (this.isAuthenticated()) {
+        this.loadEvents();
+        return;
+      }
+
+      this.events = [];
+      this.isLoading = false;
+      this.loadError = '';
+      this.saveError = '';
+      this.saveSuccess = '';
+      this.isFormModalOpen = false;
+      this.isDeleteModalOpen = false;
+      this.isProfileModalOpen = false;
+      this.eventPendingDelete = null;
+      this.selectedEventId = null;
+      this.resetForm();
+      this.changeDetectorRef.markForCheck();
+    });
   }
 
   public openCreateModal(): void {
@@ -112,6 +134,14 @@ export class WelcomePageComponent implements OnInit {
     this.saveError = '';
     this.eventPendingDelete = event;
     this.isDeleteModalOpen = true;
+  }
+
+  protected openProfileModal(): void {
+    this.isProfileModalOpen = true;
+  }
+
+  protected closeProfileModal(): void {
+    this.isProfileModalOpen = false;
   }
 
   protected closeDeleteModal(): void {
@@ -154,6 +184,23 @@ export class WelcomePageComponent implements OnInit {
     }
   }
 
+  protected onProfileBackdropClick(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeProfileModal();
+    }
+  }
+
+  protected onProfileBackdropKeydown(event: KeyboardEvent): void {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'Escape') {
+      event.preventDefault();
+      this.closeProfileModal();
+    }
+  }
+
   public submitForm(): void {
     this.eventForm.markAllAsTouched();
     this.saveSuccess = '';
@@ -169,8 +216,7 @@ export class WelcomePageComponent implements OnInit {
       status: formValue.status.trim(),
       eventDate: new Date(formValue.eventDate).toISOString(),
       description: this.normalizeOptionalValue(formValue.description),
-      imageUrl: this.normalizeOptionalValue(formValue.imageUrl),
-      userId: this.defaultUserId
+      imageUrl: this.normalizeOptionalValue(formValue.imageUrl)
     };
     const request = this.formMode === 'edit' && this.selectedEventId !== null
       ? this.eventService.updateEvent(this.selectedEventId, payload)
@@ -196,6 +242,10 @@ export class WelcomePageComponent implements OnInit {
           this.changeDetectorRef.markForCheck();
         },
         error: (error: HttpErrorResponse) => {
+          if (this.handleAuthorizationError(error)) {
+            return;
+          }
+
           this.saveError = this.extractErrorMessage(
             error,
             this.formMode === 'edit'
@@ -234,6 +284,10 @@ export class WelcomePageComponent implements OnInit {
           this.changeDetectorRef.markForCheck();
         },
         error: (error: HttpErrorResponse) => {
+          if (this.handleAuthorizationError(error)) {
+            return;
+          }
+
           this.saveError = this.extractErrorMessage(
             error,
             'We could not delete this event right now. Please try again in a moment.'
@@ -252,7 +306,16 @@ export class WelcomePageComponent implements OnInit {
     return this.eventForm.controls[controlName].value.length;
   }
 
+  protected logout(): void {
+    this.authService.logout();
+    void this.router.navigateByUrl('/');
+  }
+
   private loadEvents(): void {
+    if (!this.isAuthenticated()) {
+      return;
+    }
+
     this.isLoading = true;
     this.loadError = '';
 
@@ -271,6 +334,10 @@ export class WelcomePageComponent implements OnInit {
           this.changeDetectorRef.markForCheck();
         },
         error: (error: HttpErrorResponse) => {
+          if (this.handleAuthorizationError(error)) {
+            return;
+          }
+
           this.loadError = this.extractErrorMessage(
             error,
             'We could not load events right now. Please try again in a moment.'
@@ -340,5 +407,15 @@ export class WelcomePageComponent implements OnInit {
 
   private extractErrorMessage(error: HttpErrorResponse, fallbackMessage: string): string {
     return error.error?.message ?? fallbackMessage;
+  }
+
+  private handleAuthorizationError(error: HttpErrorResponse): boolean {
+    if (error.status !== 401 && error.status !== 403) {
+      return false;
+    }
+
+    this.authService.logout();
+    void this.router.navigateByUrl('/auth');
+    return true;
   }
 }

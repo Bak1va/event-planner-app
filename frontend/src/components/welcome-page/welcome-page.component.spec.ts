@@ -1,8 +1,11 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { WelcomePageComponent } from './welcome-page.component';
+import { AuthService } from '../../services/auth.service';
 import { EventService } from '../../services/event.service';
 import { EventDto } from '../../DTOs/event.dto';
 
@@ -12,6 +15,11 @@ describe('WelcomePageComponent', () => {
     createEvent: ReturnType<typeof vi.fn>;
     updateEvent: ReturnType<typeof vi.fn>;
     deleteEvent: ReturnType<typeof vi.fn>;
+  };
+  let authServiceMock: {
+    currentUser: ReturnType<typeof signal>;
+    isAuthenticated: ReturnType<typeof signal>;
+    logout: ReturnType<typeof vi.fn>;
   };
 
   const mockEvents: EventDto[] = [
@@ -46,10 +54,28 @@ describe('WelcomePageComponent', () => {
       updateEvent: vi.fn().mockReturnValue(of(mockEvents[0])),
       deleteEvent: vi.fn().mockReturnValue(of(void 0))
     };
+    authServiceMock = {
+      currentUser: signal<any>({
+        id: 1,
+        name: 'Event Team',
+        firstName: 'Event',
+        lastName: 'Team',
+        phoneNumber: '+1-555-0100',
+        email: 'team@eventplanner.local',
+        dateAdded: '2026-04-01T00:00:00Z',
+        dateModified: '2026-04-01T00:00:00Z'
+      }),
+      isAuthenticated: signal(true),
+      logout: vi.fn()
+    };
 
     await TestBed.configureTestingModule({
       imports: [WelcomePageComponent],
-      providers: [{ provide: EventService, useValue: eventServiceMock }]
+      providers: [
+        provideRouter([]),
+        { provide: EventService, useValue: eventServiceMock },
+        { provide: AuthService, useValue: authServiceMock }
+      ]
     }).compileComponents();
   });
 
@@ -107,6 +133,24 @@ describe('WelcomePageComponent', () => {
     fixture.detectChanges();
 
     expect(compiled.querySelector('[role="dialog"]')).not.toBeNull();
+  });
+
+  it('should open the profile modal from the header menu', () => {
+    const fixture = TestBed.createComponent(WelcomePageComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const menuButton = compiled.querySelector<HTMLButtonElement>('.menu-toggle');
+
+    menuButton?.click();
+    fixture.detectChanges();
+
+    const profileButton = compiled.querySelector<HTMLButtonElement>('.menu-item');
+    profileButton?.click();
+    fixture.detectChanges();
+
+    expect(compiled.querySelector('[aria-label="Profile dialog"]')).not.toBeNull();
+    expect(compiled.textContent).toContain('team@eventplanner.local');
   });
 
   it('should open the edit modal from an event card action', () => {
@@ -181,5 +225,20 @@ describe('WelcomePageComponent', () => {
     fixture.componentInstance['confirmDelete']();
 
     expect(eventServiceMock.deleteEvent).toHaveBeenCalledWith(1);
+  });
+
+  it('should hide the event list when the user is not authenticated', async () => {
+    authServiceMock.currentUser.set(null);
+    authServiceMock.isAuthenticated.set(false);
+
+    const fixture = TestBed.createComponent(WelcomePageComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.querySelector('.events-section')).toBeNull();
+    expect(compiled.textContent).toContain('Each account gets its own event dashboard');
+    expect(eventServiceMock.getAllEvents).not.toHaveBeenCalled();
   });
 });

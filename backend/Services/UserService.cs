@@ -89,16 +89,14 @@ public class UserService : IUserService
 
     public bool EmailExists(string email)
     {
-        var normalizedEmail = email.Trim();
+        var normalizedEmail = email.Trim().ToUpperInvariant();
 
         if (_dbContext is not null)
         {
-            return _dbContext.Users.Any(u =>
-                u.Email.Equals(normalizedEmail, StringComparison.OrdinalIgnoreCase));
+            return _dbContext.Users.Any(u => u.Email.ToUpper() == normalizedEmail);
         }
 
-        return _usersStore!.Values.Any(u =>
-            u.Email.Equals(normalizedEmail, StringComparison.OrdinalIgnoreCase));
+        return _usersStore!.Values.Any(u => u.Email.ToUpperInvariant() == normalizedEmail);
     }
 
     public UserDto CreateUser(UserCreateRequest request)
@@ -224,8 +222,8 @@ public class UserService : IUserService
 
         if (_dbContext is not null)
         {
-            var dbUser = _dbContext.Users.FirstOrDefault(u =>
-                u.Email.Equals(request.Email.Trim(), StringComparison.OrdinalIgnoreCase));
+            var normalizedEmail = request.Email.Trim().ToUpperInvariant();
+            var dbUser = _dbContext.Users.FirstOrDefault(u => u.Email.ToUpper() == normalizedEmail);
 
             if (dbUser is null || !VerifyPassword(request.Password, dbUser.PasswordHash))
             {
@@ -236,7 +234,7 @@ public class UserService : IUserService
         }
 
         var user = _usersStore!.Values.FirstOrDefault(u =>
-            u.Email.Equals(request.Email.Trim(), StringComparison.OrdinalIgnoreCase));
+            u.Email.ToUpperInvariant() == request.Email.Trim().ToUpperInvariant());
 
         if (user is null || !VerifyPassword(request.Password, user.PasswordHash))
         {
@@ -266,7 +264,7 @@ public class UserService : IUserService
 
             var emailInUse = _dbContext.Users.Any(u =>
                 u.Id != id &&
-                u.Email.Equals(normalizedEmail, StringComparison.OrdinalIgnoreCase));
+                u.Email.ToUpper() == normalizedEmail.ToUpper());
 
             if (emailInUse)
             {
@@ -290,7 +288,7 @@ public class UserService : IUserService
 
         var inMemoryEmailInUse = _usersStore.Values.Any(u =>
             u.Id != id &&
-            u.Email.Equals(normalizedEmail, StringComparison.OrdinalIgnoreCase));
+            u.Email.ToUpperInvariant() == normalizedEmail.ToUpperInvariant());
 
         if (inMemoryEmailInUse)
         {
